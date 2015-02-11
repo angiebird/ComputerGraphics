@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/print.css" media="print">
+
+    <title>ComputerGraphics by angiebird</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>ComputerGraphics</h1>
+        <h2></h2>
+
+        <section id="downloads">
+          <a href="https://github.com/angiebird/ComputerGraphics/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/angiebird/ComputerGraphics/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/angiebird/ComputerGraphics" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+<script src=init.js></script>
+<script src=buffer-loader.js></script>
+<script src=crossfade-sample.js></script>
+<script src=lib1.js></script>
+
+<div class="container">
+	<h2>Chladni Flower</h2>
+	<div>
+	<button onclick="CrossfadeSample.toggle()" class="btn">Music</button>
+	</div>
+	<div>
+	<canvas id='canvas1' width='640' height='640'></canvas>
+	</div>
+	<h3>References</h3>
+	<p>http://paulbourke.net/geometry/chladni/</p>
+	<p>http://www.html5rocks.com/en/tutorials/webaudio/intro/</p>
+</div>
+
+<script id='my_vertex_shader' type='x-shader/x-vertex'>
+   attribute vec3 aPosition;
+   varying   vec3 vPosition;
+   void main() {
+      gl_Position = vec4(aPosition, 1.0);
+      vPosition = aPosition;
+   }
+</script>
+
+<!!==========================================================================
+
+   Below is the fragment shader from class (with some slight improvements).
+
+   Your assignment is to write your own interesting fragment shader program.
+   Try to have fun with it -- use "uTime" to create animated patterns, and
+   "uCursor" to make it responsive to a user's mouse gestures.
+
+   Try to make something as completely different from my "easter egg" example
+   as possible :-)
+
+============================================================================>
+
+<script id='my_fragment_shader' type='x-shader/x-fragment'>
+   precision mediump float;
+   uniform float uTime;
+   uniform vec3  uCursor;
+   varying vec3  vPosition;
+   void main() {
+      float n = uCursor.x / .1 + 1.;
+      float m = uCursor.y / .2 + 2.;
+	  float pi = 3.14159265359;
+      vec3 color = vec3(0., 0., 0.);                    // Set background color black.
+      float x = vPosition.x;                            // Use only x and y coords of
+      float y = vPosition.y;                            //   the square's geometry.
+      float z = cos(n * pi * x / 2.) * cos(m * pi * y / 2.) - cos(m * pi * x / 2.) * cos(n * pi * y / 2.);
+	  z = pow(z*z, 0.5);
+	  color = vec3(cos(z), cos(2.*z), sin(z));
+      gl_FragColor = vec4(color, 1.);
+   }
+</script>
+
+<script>
+start_gl('canvas1', document.getElementById('my_vertex_shader'  ).innerHTML,
+                    document.getElementById('my_fragment_shader').innerHTML);
+</script>
+
+  </body>
+</html>
+
