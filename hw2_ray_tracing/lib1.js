@@ -27,8 +27,10 @@ function start_gl(canvas_id, vertexShader, fragmentShader) {
          var r = event.target.getBoundingClientRect();
          gl.cursor.x = (event.clientX - r.left  ) / (r.right - r.left) * 2 - 1;
          gl.cursor.y = (event.clientY - r.bottom) / (r.top - r.bottom) * 2 - 1;
-         if (eventZ !== undefined)
-	    gl.cursor.z = eventZ;
+         if (eventZ !== undefined){
+        	 gl.cursor.z = eventZ;
+        	 mouseDown = true;
+         }
       }
       gl.cursor = new Vector3();
       canvas.onmousedown = function(event) { setMouse(event, 1); } // On mouse press, set z to 1.
@@ -81,7 +83,7 @@ function gl_init(gl, vertexShader, fragmentShader) {
 
    // Get the address in the fragment shader of each of my uniform variables.
 
-   ['uTime','uCursor'].forEach(function(name) {
+   ['uTime','uCursor', 'uPos', 'uPos1', 'uF'].forEach(function(name) {
       gl[name] = gl.getUniformLocation(program, name);
    });
 
@@ -93,9 +95,75 @@ function gl_init(gl, vertexShader, fragmentShader) {
 }
 
 // Update is called once per animation frame.
+var mouseDown = false;
+var yf = -2; // floor
+var f = 5;
+
+var x0 = -2;
+var y0 = 2;
+var z = -10;
+var r0 = 0.5;
+var vx = 0.2;
+var vy = 0;
+var g = 0.8;
+
+var x1 = 0.5;
+var r1 = 1;
+var y1 = yf + r1;
+
+var ballAudio = new Audio('ball.mp3');
+ballAudio.load();
+
 
 function gl_update(gl) {
+   
+   if(mouseDown){
+  	 x0 = gl.cursor.x*(f - z)/f;
+  	 y0 = gl.cursor.y*(f - z)/f;
+  	 vx = 0.2;
+  	 vy = 0;
+		 startTime = (new Date()).getTime();
+		 mouseDown = false;
+   }
+
    var time = ((new Date()).getTime() - startTime) / 1000;            // Set uniform variables
+
+	 var x = x0+(vx*time);
+	 var y = y0+(vy*time - 0.5*g*time*time)
+
+	 if(y < yf + r0){ // bounce on the floor
+		 x0 = x;
+		 y0 = yf + r0;
+		 vx = 0.9*vx;
+		 vy = -0.7*(vy-g*time);
+		 startTime = (new Date()).getTime();
+		 if(Math.abs(vy > 0.03)){
+			 ballAudio.play();
+		 }
+	 }
+	 
+	 var dist = Math.pow(Math.pow(x - x1, 2) + Math.pow(y - y1, 2), 0.5); // distance between two balls
+	 if(dist < r0 + r1){ // bounce with big ball
+	     var nx = (x - x1)/dist;
+	     var ny = (y - y1)/dist;
+
+		 	 x0 = x1 + nx*(r0 + r1);
+		 	 y0 = y1 + ny*(r0 + r1);
+
+		 	 vx = vx;
+		 	 vy = vy - g*time;
+
+	     var product = vx*nx + vy*ny;
+	     vx = vx - 2 * product * nx;
+	     vy = vy - 2 * product * ny;
+		   startTime = (new Date()).getTime();
+		   ballAudio.play();
+	 }
+
+   gl.uniform4f(gl.uPos, x, y, z, r0);
+   gl.uniform4f(gl.uPos1, x1, y1, z, r1);
+   gl.uniform1f(gl.uF, f);
+
    gl.uniform1f(gl.uTime  , time);                                    // in fragment shader.
    gl.uniform3f(gl.uCursor, gl.cursor.x, gl.cursor.y, gl.cursor.z);
    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);                            // Render the square.

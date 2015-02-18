@@ -1,10 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/pygment_trac.css" media="screen">
+
+    <title>ComputerGraphics by angiebird</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>ComputerGraphics</h1>
+        <h2></h2>
+
+        <section id="downloads">
+          <a href="https://github.com/angiebird/ComputerGraphics/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/angiebird/ComputerGraphics/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/angiebird/ComputerGraphics" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
 <script src=lib1.js></script>
 
-<body bgcolor=black>
-<center>
-<td><canvas id='canvas1' width=400 height=400></canvas></td>
-</center>
-</body>
+<div class="container">
+    <h2>Bouncing Ball</h2>
+    <div>
+<canvas id='canvas1' width=600 height=600></canvas>
+</div>
+</div>
 
 <script id='my_vertex_shader' type='x-shader/x-vertex'>
    attribute vec3 aPosition;
@@ -18,12 +45,19 @@
 <script id='my_fragment_shader' type='x-shader/x-fragment'>
    precision mediump float;
    uniform float uTime;
+   uniform float uF;
    uniform vec3  uCursor;
+   uniform vec4  uPos;
+   uniform vec4  uPos1;
    varying vec3  vPosition;
 
    #define sphereNum (2)
+   #define planeNum (1)
    vec4 sphere[sphereNum];
-   vec3 material[sphereNum];
+   vec3 materialSphere[sphereNum];
+
+   vec4 plane[planeNum];
+   vec3 materialPlane[planeNum];
 
    vec3 Lrgb;
    vec3 Ldir;
@@ -43,6 +77,22 @@
       	  return 10000.;
    }
 
+	float rayPlane(vec3 V, vec3 W, vec4 P){
+		float t = -(dot(V, P.xyz) + P.w)/dot(W, P.xyz);
+		if(t > 0.){
+			return t;
+		}
+		else{
+		    return 10000.;
+		}
+	}
+
+    vec3 shadePlane(vec3 point, vec4 plane, vec3 material) {
+	  float t= dot(Ldir, plane.xyz);
+	  vec3 color = (0.2 +  max(0., .8*t)) * material;
+	  return color;
+	}
+
    // Diffusely shade a sphere.
    //    point is the x,y,z position of the surface point.
    //    sphere is the x,y,z,r definition of the sphere.
@@ -55,10 +105,9 @@
 
       // FOR THE AMBIENT COMPONENT OF THE DIFFUSE SHADING, YOU CAN
       // USE A SIMPLE APPROXIMATION SUCH AS: ambient = material / 5.;
-	  vec3 ambient = material/5.;
 	  vec3 normal = normalize(point - sphere.xyz);
 	  float t= dot(Ldir, normal);
-	  color = ambient +  max(0., .8*t) * material;
+	  color = (.2 +  max(0., .8*t)) * material;
       return color;
    }
 
@@ -66,36 +115,34 @@
       vec2 c = uCursor.xy;
 
       Lrgb = vec3(1.,.5,0.);
-      Ldir = normalize(vec3(c.x, c.y, 1. - 2. * dot(c, c)));
+      //Ldir = normalize(vec3(c.x, c.y, 1. - 2. * dot(c, c)));
+      Ldir = normalize(vec3(1., 1., 1.));
 
       // YOU NEED TO COMPUTE V AND W TO CREATE THE RAY FOR THIS PIXEL,
       // USING vPosition.x AND vPosition.y.
 
       vec3 V, W;
 
-	  V = vec3(0., 0., 5.);
+	  V = vec3(0., 0., uF);
 	  W = normalize(vPosition - V);
 
       // YOU NEED TO SET x,y,z AND r FOR sphere.
-	  sphere[0] = vec4(0., 0., -7., 1.);
-	  sphere[1] = vec4(2.2*cos(uTime), 0., -7.+2.2*sin(uTime), .5);
+	  sphere[0] = uPos;
+	  sphere[1] = uPos1;
 
       // YOU NEED TO SET r,g,b FOR material.
-	  material[0] = vec3(1., 1., 1.);
-	  material[1] = vec3(1., 0., 1.);
-	  
+	  materialSphere[0] = vec3(1., 0., 1.);
+	  materialSphere[1] = vec3(0., 0., 1.);
 
       vec3 color = vec3(0., 0., 0.);
 	  float t = 10000.;
-	  int sphereIdx = 0;
 	  for(int i = 0; i < sphereNum; i++){
 	      float tt = raySphere(V, W, sphere[i]);
 		  if(tt < t){
 			  t = tt;
-	          color = shadeSphere(V + t * W, sphere[i], material[i]);
+	          color = shadeSphere(V + t * W, sphere[i], materialSphere[i]);
 		  }
 	  }
-
       gl_FragColor = vec4(sqrt(color), 1.); // Do Gamma correction.
    }
 </script>
@@ -104,4 +151,7 @@
 start_gl('canvas1', document.getElementById('my_vertex_shader'  ).innerHTML,
                     document.getElementById('my_fragment_shader').innerHTML);
 </script>
+
+  </body>
+</html>
 
