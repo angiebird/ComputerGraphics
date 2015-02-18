@@ -21,8 +21,9 @@
    uniform vec3  uCursor;
    varying vec3  vPosition;
 
-   vec4 sphere;
-   vec3 material;
+   #define sphereNum (2)
+   vec4 sphere[sphereNum];
+   vec3 material[sphereNum];
 
    vec3 Lrgb;
    vec3 Ldir;
@@ -76,16 +77,24 @@
 	  W = normalize(vPosition - V);
 
       // YOU NEED TO SET x,y,z AND r FOR sphere.
-	  sphere = vec4(0., 0., -3., 1.);
+	  sphere[0] = vec4(0., 0., -7., 1.);
+	  sphere[1] = vec4(2.2*cos(uTime), 0., -7.+2.2*sin(uTime), .5);
 
       // YOU NEED TO SET r,g,b FOR material.
-	  material = vec3(1., 1., 1.);
+	  material[0] = vec3(1., 1., 1.);
+	  material[1] = vec3(1., 0., 1.);
 	  
 
       vec3 color = vec3(0., 0., 0.);
-      float t = raySphere(V, W, sphere);
-      if (t < 10000.)
-         color = shadeSphere(V + t * W, sphere, material);
+	  float t = 10000.;
+	  int sphereIdx = 0;
+	  for(int i = 0; i < sphereNum; i++){
+	      float tt = raySphere(V, W, sphere[i]);
+		  if(tt < t){
+			  t = tt;
+	          color = shadeSphere(V + t * W, sphere[i], material[i]);
+		  }
+	  }
 
       gl_FragColor = vec4(sqrt(color), 1.); // Do Gamma correction.
    }
