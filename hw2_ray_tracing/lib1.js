@@ -137,7 +137,7 @@ function gl_update(gl) {
 		 vx = 0.9*vx;
 		 vy = -0.7*(vy-g*time);
 		 startTime = (new Date()).getTime();
-		 if(Math.abs(vy > 0.03)){
+		 if(Math.abs(vy > 0.1)){
 			 ballAudio.play();
 		 }
 	 }
