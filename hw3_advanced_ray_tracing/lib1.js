@@ -193,7 +193,7 @@ function gl_update(gl) {
    
    gl.uniform4f(gl.uPos1, 1.5*Math.sin(tt/1.7) + middle.x, middle.y, 1.5*Math.cos(tt/1.7) + middle.z, .3);
    //gl.uniform4f(gl.uPos, middle.x, 2.0*Math.cos(tt/1.3) + middle.y, 2.0*Math.sin(tt/1.3) + middle.z, .2);
-   gl.uniform4f(gl.uPos, middle.x, middle.y - 2, middle.z-1, .7);
+   gl.uniform4f(gl.uPos, middle.x, middle.y - 23., middle.z - 5., 20.);
    gl.uniform1f(gl.uF, f);
    
    function rotate(a, b, pos){
