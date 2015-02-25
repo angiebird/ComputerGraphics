@@ -31,6 +31,8 @@ function start_gl(canvas_id, vertexShader, fragmentShader) {
         	 gl.cursor.z = eventZ;
         	 mouseDown = true;
          }
+         var mixer  = {value: Math.abs(gl.cursor.x) + Math.abs(gl.cursor.y), max: 1};
+         var filter = {value: Math.abs(gl.cursor.x) + Math.abs(gl.cursor.y), max: 1};
       }
       gl.cursor = new Vector3();
       canvas.onmousedown = function(event) { setMouse(event, 1); } // On mouse press, set z to 1.
@@ -83,7 +85,7 @@ function gl_init(gl, vertexShader, fragmentShader) {
 
    // Get the address in the fragment shader of each of my uniform variables.
 
-   ['uTime','uCursor', 'uPos', 'uPos1', 'uF'].forEach(function(name) {
+   ['uTime','uCursor', 'uPos', 'uPos1', 'uInterSphere0', 'uInterSphere1', 'uInterSphere2', 'uInterSphere3', 'uF'].forEach(function(name) {
       gl[name] = gl.getUniformLocation(program, name);
    });
 
@@ -105,6 +107,7 @@ var z = -10;
 var r0 = 0.5;
 var vx = 0.2;
 var vy = 0;
+var vz = 0;
 var g = 0.8;
 
 var x1 = 0.5;
@@ -114,20 +117,36 @@ var y1 = yf + r1;
 var ballAudio = new Audio('ball.mp3');
 ballAudio.load();
 
+var rx = 1;
+var ry = 1;
+
+   var uInterSphere = [];
+   uInterSphere[0] = {x: 0., y: Math.sqrt(3.), z: -10., r: 2.};
+   uInterSphere[1] = {x: -1., y: 0., z: -10., r: 2.};
+   uInterSphere[2] = {x: 1., y: 0., z: -10., r: 2.};
+   uInterSphere[3] = {x: 1./Math.sqrt(3.), y: 0., z: 2.*Math.sqrt(2.)/Math.sqrt(3.)-10., r: 2.};
+
+   var middle = {x: 0, y:0, z:0};
+   for(var i = 0; i < uInterSphere.length; i++){
+  	 middle.x += uInterSphere[i].x/uInterSphere.length;
+  	 middle.y += uInterSphere[i].y/uInterSphere.length;
+  	 middle.z += uInterSphere[i].z/uInterSphere.length;
+   }
+   
+
 
 function gl_update(gl) {
    
    if(mouseDown){
-  	 x0 = gl.cursor.x*(f - z)/f;
-  	 y0 = gl.cursor.y*(f - z)/f;
-  	 vx = 0.2;
-  	 vy = 0;
+  	 rx = gl.cursor.x;
+  	 ry = gl.cursor.y;
 		 startTime = (new Date()).getTime();
 		 mouseDown = false;
    }
 
    var time = ((new Date()).getTime() - startTime) / 1000;            // Set uniform variables
 
+   /*
 	 var x = x0+(vx*time);
 	 var y = y0+(vy*time - 0.5*g*time*time)
 
@@ -159,10 +178,53 @@ function gl_update(gl) {
 		   startTime = (new Date()).getTime();
 		   ballAudio.play();
 	 }
-
    gl.uniform4f(gl.uPos, x, y, z, r0);
    gl.uniform4f(gl.uPos1, x1, y1, z, r1);
    gl.uniform1f(gl.uF, f);
+	 */
+
+   tt = (new Date()).getTime()/1000;
+
+  	 rx = gl.cursor.x;
+  	 ry = gl.cursor.y;
+
+
+
+   
+   gl.uniform4f(gl.uPos1, 1.5*Math.sin(tt/1.7) + middle.x, middle.y, 1.5*Math.cos(tt/1.7) + middle.z, .3);
+   //gl.uniform4f(gl.uPos, middle.x, 2.0*Math.cos(tt/1.3) + middle.y, 2.0*Math.sin(tt/1.3) + middle.z, .2);
+   gl.uniform4f(gl.uPos, middle.x, middle.y - 2, middle.z-1, .7);
+   gl.uniform1f(gl.uF, f);
+   
+   function rotate(a, b, pos){
+  	 pos.x -= middle.x;
+  	 pos.y -= middle.y;
+  	 pos.z -= middle.z;
+
+  	 var y = Math.cos(a) * pos.y - Math.sin(a) * pos.z;
+  	 var z = Math.sin(a) * pos.y + Math.cos(a) * pos.z;
+  	 pos.y = y;
+  	 pos.z = z;
+  	 
+  	 var x = Math.cos(b) * pos.x - Math.sin(b) * pos.z;
+         z = Math.sin(b) * pos.x + Math.cos(b) * pos.z;
+  	 pos.x = x;
+  	 pos.z = z;
+
+  	 pos.x += middle.x;
+  	 pos.y += middle.y;
+  	 pos.z += middle.z;
+   }
+   
+   for(var i = 0; i < uInterSphere.length; i++){
+  	 rotate(-Math.PI*ry*0.01, -Math.PI*rx*0.01, uInterSphere[i])
+   }
+
+   gl.uniform4f(gl.uInterSphere0, uInterSphere[0].x, uInterSphere[0].y, uInterSphere[0].z, uInterSphere[0].r);
+   gl.uniform4f(gl.uInterSphere1, uInterSphere[1].x, uInterSphere[1].y, uInterSphere[1].z, uInterSphere[1].r);
+   gl.uniform4f(gl.uInterSphere2, uInterSphere[2].x, uInterSphere[2].y, uInterSphere[2].z, uInterSphere[2].r);
+   gl.uniform4f(gl.uInterSphere3, uInterSphere[3].x, uInterSphere[3].y, uInterSphere[3].z, uInterSphere[3].r);
+   
 
    gl.uniform1f(gl.uTime  , time);                                    // in fragment shader.
    gl.uniform3f(gl.uCursor, gl.cursor.x, gl.cursor.y, gl.cursor.z);
