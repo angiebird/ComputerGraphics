@@ -124,7 +124,7 @@ var ry = 1;
    uInterSphere[0] = {x: 0., y: Math.sqrt(3.), z: -10., r: 2.};
    uInterSphere[1] = {x: -1., y: 0., z: -10., r: 2.};
    uInterSphere[2] = {x: 1., y: 0., z: -10., r: 2.};
-   uInterSphere[3] = {x: 1./Math.sqrt(3.), y: 0., z: 2.*Math.sqrt(2.)/Math.sqrt(3.)-10., r: 2.};
+   uInterSphere[3] = {x: 0., y: 1./Math.sqrt(3.), z: 2.*Math.sqrt(2.)/Math.sqrt(3.)-10., r: 2.};
 
    var middle = {x: 0, y:0, z:0};
    for(var i = 0; i < uInterSphere.length; i++){
