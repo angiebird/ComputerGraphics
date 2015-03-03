@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/pygment_trac.css" media="screen">
+
+    <title>ComputerGraphics by angiebird</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>ComputerGraphics</h1>
+        <h2></h2>
+
+        <section id="downloads">
+          <a href="https://github.com/angiebird/ComputerGraphics/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/angiebird/ComputerGraphics/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/angiebird/ComputerGraphics" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+<script src=lib1.js></script>
+
+<div class="container">
+    <h2>Rotate Me</h2>
+    <div>
+<canvas id='canvas1' width=600 height=600></canvas>
+</div>
+</div>
+
+<script id='my_vertex_shader' type='x-shader/x-vertex'>
+   attribute vec3 aPosition;
+   varying   vec3 vPosition;
+   void main() {
+      gl_Position = vec4(aPosition, 1.0);
+      vPosition = aPosition;
+   }
+</script>
+
+<script id='my_fragment_shader' type='x-shader/x-fragment'>
+   precision mediump float;
+   uniform float uTime;
+   uniform float uF;
+   uniform vec3  uCursor;
+
+
+   #define interSphereNum (4)
+   uniform vec4 uInterSphere[interSphereNum];
+
+   varying vec3  vPosition;
+
+   #define sphereNum (2)
+   uniform vec4  uSphere[sphereNum];
+   vec3 materialSphere[sphereNum];
+
+    vec3 materialInterSphere[interSphereNum];
+
+   #define planeNum (1)
+   vec4 plane[planeNum];
+   vec3 materialPlane[planeNum];
+
+   vec3 Lrgb;
+   vec3 Ldir;
+
+   // Compute intersection of a ray with a sphere, if any.  Return t.
+   // If there is no intersection, return 10000.
+
+   float raySphere(vec3 V, vec3 W, vec4 S) {
+
+      // YOU NEED TO COMPUTE t, BY SETTING UP AND THEN SOLVING A QUADRATIC EQUATION.
+	  float b = 2.*dot(W, V-S.xyz); 
+	  float c = dot(V-S.xyz, V-S.xyz) - S.w*S.w;
+	  float d = b*b - 4.*c;
+	  if(d > 0.){
+		  return (-b - sqrt(d))/2.;
+	  }
+	  else
+      	  return 10000.;
+   }
+
+   vec2 raySphere2(vec3 V, vec3 W, vec4 S){
+	  float b = 2.*dot(W, V-S.xyz); 
+	  float c = dot(V-S.xyz, V-S.xyz) - S.w*S.w;
+	  float d = b*b - 4.*c;
+	  if(d > 0.){
+		  return vec2((-b - sqrt(d))/2., (-b + sqrt(d))/2.);
+	  }
+	  else
+      	  return vec2(10000., 10000.);
+   }
+
+	float rayPlane(vec3 V, vec3 W, vec4 P){
+		float t = -(dot(V, P.xyz) + P.w)/dot(W, P.xyz);
+		if(t > 0.){
+			return t;
+		}
+		else{
+		    return 10000.;
+		}
+	}
+
+    vec3 shadePlane(vec3 point, vec4 plane, vec3 material) {
+	  float t= dot(Ldir, plane.xyz);
+	  vec3 color = (0.2 +  max(0., .8*t)) * material;
+	  return color;
+	}
+
+   bool rayTracing(vec3 V, vec3 W){
+	  float t = 10000.;
+	  bool result = false;
+	  for(int i = 0; i < sphereNum; i++){
+	      float tt = raySphere(V , W, uSphere[i]);
+		  if(tt < t && tt > 0.01){
+			  result = true;
+		  }
+	  }
+
+	  vec2 t0 = vec2(-10000., 10000.);
+	  int cnt = 0;
+	  for(int i = 0; i < interSphereNum; i++){
+	  	  vec2 t1 = raySphere2(V, W, uInterSphere[i]);
+	  	  if(max(t0.x, t1.x) < min(t0.y, t1.y)){
+			  t0.x = max(t0.x, t1.x);
+			  t0.y = min(t0.y, t1.y);
+			  cnt++;
+		  }
+	  }
+	  if(cnt == interSphereNum && t0.x > 0.01)
+			result = true;
+	  return result;
+   }
+
+   bool shadow(vec3 point, vec4 sphere){
+	  vec3 V = point; //+ 0.1*(point - sphere.xyz); // why does this not work?
+	  vec3 W = Ldir;
+      return rayTracing(V, W);
+   }
+
+   float diffusion(vec3 point, vec4 sphere){
+	  vec3 normal = (point - sphere.xyz)/sphere.w;
+	  return max(0., dot(Ldir, normal));
+   }
+
+   float phongReflection(vec3 W, vec3 point, vec4 sphere){
+	  vec3 normal = (point - sphere.xyz)/sphere.w;
+	  vec3 R = 2.*max(0., dot(Ldir, normal))*normal - Ldir;
+	  return pow(dot(R, W), 20.);
+   }
+
+   // Diffusely shade a sphere.
+   //    point is the x,y,z position of the surface point.
+   //    sphere is the x,y,z,r definition of the sphere.
+   //    material is the r,g,b color of the sphere.
+
+   vec3 shadeSphere(vec3 W, vec3 point, vec4 sphere, vec3 material) {
+      vec3 color = vec3(0.,0.,0.);
+
+      // YOU NEED TO COMPUTE COLOR FOR A DIFFUSELY SHADED SPHERE.
+
+      // FOR THE AMBIENT COMPONENT OF THE DIFFUSE SHADING, YOU CAN
+      // USE A SIMPLE APPROXIMATION SUCH AS: ambient = material / 5.;
+	  if(shadow(point, sphere)){
+	  	color = .2*material;
+      }
+	  else{
+	  	float d = diffusion(point, sphere);
+      	float rlf = phongReflection(W, point, sphere);
+	  	color = (.2 + .5*rlf + .3*d) * material;
+	  }
+      return color;
+   }
+
+   void main(void) {
+      vec2 c = uCursor.xy;
+
+      Lrgb = vec3(1.,.5,0.);
+      Ldir = normalize(vec3(c.x, c.y, 1. - 2. * dot(c, c)));
+      //Ldir = normalize(vec3(1., 1., 1.));
+
+      // YOU NEED TO COMPUTE V AND W TO CREATE THE RAY FOR THIS PIXEL,
+      // USING vPosition.x AND vPosition.y.
+
+      vec3 V, W;
+
+	  V = vec3(0., 0., uF);
+	  W = normalize(vPosition - V);
+
+
+      // YOU NEED TO SET r,g,b FOR material.
+	  materialSphere[0] = vec3(1., 1., 0.);
+	  materialSphere[1] = vec3(0., 1., 1.);
+
+      vec3 color = vec3(0., 0., 0.);
+	  float t = 10000.;
+	  for(int i = 0; i < sphereNum; i++){
+	      float tt = raySphere(V, W, uSphere[i]);
+		  if(tt < t){
+			  t = tt;
+	          color = shadeSphere(W, V + t * W, uSphere[i], materialSphere[i]);
+		  }
+	  }
+
+	  vec3 material = vec3(1., .2, .8);
+
+	  vec2 t0 = vec2(-10000., 10000.);
+	  vec3 cc = color.xyz;
+	  int cnt = 0;
+
+	  for(int i = 0; i < interSphereNum; i++){
+	  	  vec2 t1 = raySphere2(V, W, uInterSphere[i]);
+	  	  if(max(t0.x, t1.x) < min(t0.y, t1.y)){
+	  		  if(t1.x > t0.x){
+	 		  	  cc = shadeSphere(W, V + t1.x * W, uInterSphere[i], material);
+	  		  }
+			  t0.x = max(t0.x, t1.x);
+			  t0.y = min(t0.y, t1.y);
+			  cnt++;
+		  }
+	  }
+
+	  if(cnt == interSphereNum && t0.x < t)
+	  	  color = cc.xyz;
+
+      gl_FragColor = vec4(sqrt(color), 1.); // Do Gamma correction.
+   }
+</script>
+
+<script>
+start_gl('canvas1', document.getElementById('my_vertex_shader'  ).innerHTML,
+                    document.getElementById('my_fragment_shader').innerHTML);
+</script>
+
+  </body>
+</html>
+
