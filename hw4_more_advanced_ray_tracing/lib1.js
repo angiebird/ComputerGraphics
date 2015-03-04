@@ -85,7 +85,7 @@ function gl_init(gl, vertexShader, fragmentShader) {
 
    // Get the address in the fragment shader of each of my uniform variables.
 
-   ['uTime','uCursor', 'uSphere', 'uInterSphere', 'uF'].forEach(function(name) {
+   ['uTime','uCursor', 'uSphere', 'uTranSphere', 'uInterSphere', 'uF'].forEach(function(name) {
       gl[name] = gl.getUniformLocation(program, name);
    });
 
@@ -134,8 +134,9 @@ function gl_update(gl) {
   	 rx = gl.cursor.x;
   	 ry = gl.cursor.y;
    
-   uSphere = [middle.x, middle.y - 53., middle.z - 5., 50.,
-  	 1.7*Math.sin(tt/1.7) + middle.x, middle.y, 1.7*Math.cos(tt/1.7) + middle.z, .5]
+   uSphere = [middle.x, middle.y - 53., middle.z - 5., 50];
+   uTranSphere = [1.7*Math.sin(tt/1.7) + middle.x, middle.y, 1.7*Math.cos(tt/1.7) + middle.z, .5];
+   gl.uniform4fv(gl.uTranSphere, uTranSphere);
    gl.uniform4fv(gl.uSphere, uSphere);
    gl.uniform1f(gl.uF, f);
    
