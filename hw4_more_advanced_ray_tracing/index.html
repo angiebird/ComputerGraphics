@@ -201,6 +201,7 @@ float noise(vec3 P) {
 
   bool refraction(vec3 V, vec3 W){
 	  float t = 10000.;
+	  outT = 10000.;
 	  bool result = false;
 	  for(int i = 0; i < tranSphereNum; i++){
 	      float tt = raySphere(V , W, uTranSphere[i]);
@@ -208,15 +209,26 @@ float noise(vec3 P) {
 			  result = true;
 			  refracSphere(W, V + tt*W, uTranSphere[i], refracRate);
 		      t = tt;
+			  outT = tt;
 		  }
 	  }
-	  outT = t;
 	  return result;
    }
 
    bool rayTracing(vec3 V, vec3 W){
 	  float t = 10000.;
 	  bool result = false;
+
+	  for(int i = 0; i < planeNum; i++){
+	    float tt = rayPlane(V, W, plane[i]);
+		if(tt < t && tt > 0.001){
+			  result = true;
+			  rtMaterial = materialPlane[i];
+			  rtPoint    = V + tt*W;
+			  rtNormal   = plane[i].xyz;
+			  t = tt;
+		}
+	  }
 	  
 	  for(int i = 0; i < sphereNum; i++){
 	      float tt = raySphere(V , W, uSphere[i]);
@@ -279,13 +291,13 @@ float noise(vec3 P) {
       vec3 R = 2.*max(0., dot(W, normal))*normal - W;
 	  vec3 V = point;
       vec3 color = vec3(0., 0., 0.);
-	  if(refraction(V, R)){
-		rayTracing(outPoint, outDir);
-		color = rtMaterial;
-	  }
 	  if(rayTracing(V, R)){
-		if(rtT < outT)
 		  color = rtMaterial;
+	  }
+	  if(refraction(V, R)){
+		if(rtT > outT)
+			if(rayTracing(outPoint, outDir))
+				color = rtMaterial;
 	  }
 	  return color;
    }
@@ -311,9 +323,9 @@ float noise(vec3 P) {
    void main(void) {
       vec2 c = uCursor.xy;
 
-      Lrgb = vec3(1.,.5,0.);
-      //Ldir = normalize(vec3(c.x, c.y, 1. - 2. * dot(c, c)));
-      Ldir = normalize(vec3(1., 1., 1.));
+      //Lrgb = vec3(1.,.5,0.);
+      Ldir = normalize(vec3(c.x, c.y, 1. - 2. * dot(c, c)));
+      //Ldir = normalize(vec3(1., 1., 1.));
 
       // YOU NEED TO COMPUTE V AND W TO CREATE THE RAY FOR THIS PIXEL,
       // USING vPosition.x AND vPosition.y.
@@ -323,6 +335,9 @@ float noise(vec3 P) {
 	  V = vec3(0., 0., uF);
 	  W = normalize(vPosition - V);
 
+	  materialPlane[0] = vec3(0., 0., 1.);
+	  plane[0] = vec4(0., 0., 1., 50.);
+
 
       // YOU NEED TO SET r,g,b FOR material.
 	  materialSphere[0] = vec3(1., 1., 0.);
@@ -330,13 +345,17 @@ float noise(vec3 P) {
 	  uInterSphereMatreal = vec3(1., 0., 1.);
 
 	  vec3 color = vec3(0., 0., 0.);
-	  if(refraction(V, W)){
-		if(rayTracing(outPoint, outDir))
-   	      	color = shade(outDir, rtPoint, rtNormal, rtMaterial);
-	  }
+	  float t = 10000.;
       if(rayTracing(V, W)){
-		if(rtT < outT)
+			t = rtT;
    	      	color = shade(W, rtPoint, rtNormal, rtMaterial);
+	  }
+	  if(refraction(V, W)){
+		if(outT < t){
+			if(rayTracing(outPoint, outDir)){
+   	      		color = shade(outDir, outPoint, rtNormal, rtMaterial);
+		   }
+		}
 	  }
 
       gl_FragColor = vec4(sqrt(color), 1.); // Do Gamma correction.
