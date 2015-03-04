@@ -51,6 +51,7 @@
 
    #define interSphereNum (4)
    uniform vec4 uInterSphere[interSphereNum];
+   vec3 uInterSphereMatreal;
 
    varying vec3  vPosition;
 
@@ -66,6 +67,12 @@
 
    vec3 Lrgb;
    vec3 Ldir;
+
+   // ray tracing data
+   vec3 rtMaterial;
+   vec3 rtPoint;
+   vec3 rtNormal;
+   bool rtRefrac;
 
    // Compute intersection of a ray with a sphere, if any.  Return t.
    // If there is no intersection, return 10000.
@@ -113,43 +120,69 @@
    bool rayTracing(vec3 V, vec3 W){
 	  float t = 10000.;
 	  bool result = false;
+	  
 	  for(int i = 0; i < sphereNum; i++){
 	      float tt = raySphere(V , W, uSphere[i]);
-		  if(tt < t && tt > 0.01){
+		  if(tt < t && tt > 0.001){
 			  result = true;
+			  rtMaterial = materialSphere[i];
+			  rtPoint    = V + tt*W;
+			  rtNormal   = (rtPoint - uSphere[i].xyz)/uSphere[i].w;
+		      t = tt;
 		  }
 	  }
 
 	  vec2 t0 = vec2(-10000., 10000.);
 	  int cnt = 0;
+	  vec3 material;
+	  vec3 point;
+	  vec3 normal;
 	  for(int i = 0; i < interSphereNum; i++){
 	  	  vec2 t1 = raySphere2(V, W, uInterSphere[i]);
 	  	  if(max(t0.x, t1.x) < min(t0.y, t1.y)){
+	  		  if(t1.x > t0.x){
+			  	  material = uInterSphereMatreal;
+			  	  point    = V + t1.x*W;
+			  	  normal   = (point - uInterSphere[i].xyz)/uInterSphere[i].w;
+	  		  }
 			  t0.x = max(t0.x, t1.x);
 			  t0.y = min(t0.y, t1.y);
 			  cnt++;
 		  }
 	  }
-	  if(cnt == interSphereNum && t0.x > 0.01)
+	  if(cnt == interSphereNum && t0.x > 0.001 && t0.x < t){
+			rtMaterial = material;
+			rtPoint    = point;
+			rtNormal   = normal;
 			result = true;
+	  }
 	  return result;
    }
 
-   bool shadow(vec3 point, vec4 sphere){
+   bool shadow(vec3 point, vec3 normal){
 	  vec3 V = point; //+ 0.1*(point - sphere.xyz); // why does this not work?
 	  vec3 W = Ldir;
       return rayTracing(V, W);
    }
 
-   float diffusion(vec3 point, vec4 sphere){
-	  vec3 normal = (point - sphere.xyz)/sphere.w;
+   float diffusion(vec3 point, vec3 normal){
 	  return max(0., dot(Ldir, normal));
    }
 
-   float phongReflection(vec3 W, vec3 point, vec4 sphere){
-	  vec3 normal = (point - sphere.xyz)/sphere.w;
+   float phongReflection(vec3 W, vec3 point, vec3 normal){
 	  vec3 R = 2.*max(0., dot(Ldir, normal))*normal - Ldir;
 	  return pow(dot(R, W), 20.);
+   }
+
+   vec3 reflection(vec3 WW, vec3 point, vec3 normal){
+	  vec3 W = -WW;
+      vec3 R = 2.*max(0., dot(W, normal))*normal - W;
+	  vec3 V = point;
+      vec3 color = vec3(0., 0., 0.);
+	  if(rayTracing(V, R)){
+		  color = rtMaterial;
+	  }
+	  return color;
    }
 
    // Diffusely shade a sphere.
@@ -157,21 +190,16 @@
    //    sphere is the x,y,z,r definition of the sphere.
    //    material is the r,g,b color of the sphere.
 
-   vec3 shadeSphere(vec3 W, vec3 point, vec4 sphere, vec3 material) {
+   vec3 shade(vec3 W, vec3 point, vec3 normal, vec3 material){
       vec3 color = vec3(0.,0.,0.);
-
-      // YOU NEED TO COMPUTE COLOR FOR A DIFFUSELY SHADED SPHERE.
-
-      // FOR THE AMBIENT COMPONENT OF THE DIFFUSE SHADING, YOU CAN
-      // USE A SIMPLE APPROXIMATION SUCH AS: ambient = material / 5.;
-	  if(shadow(point, sphere)){
-	  	color = .2*material;
-      }
-	  else{
-	  	float d = diffusion(point, sphere);
-      	float rlf = phongReflection(W, point, sphere);
-	  	color = (.2 + .5*rlf + .3*d) * material;
+	  color = .1*material;
+	  float d = diffusion(point, normal);
+      float rlf = phongReflection(W, point, normal);
+	  if(!shadow(point, normal)){
+		vec3 light = .9 * vec3(1., 1., 1.);
+	  	color += (.3*rlf + .5*d) * material * light;
 	  }
+ 	  color += .2 * .5 * d * reflection(W, point, normal) * material;
       return color;
    }
 
@@ -179,8 +207,8 @@
       vec2 c = uCursor.xy;
 
       Lrgb = vec3(1.,.5,0.);
-      Ldir = normalize(vec3(c.x, c.y, 1. - 2. * dot(c, c)));
-      //Ldir = normalize(vec3(1., 1., 1.));
+      //Ldir = normalize(vec3(c.x, c.y, 1. - 2. * dot(c, c)));
+      Ldir = normalize(vec3(1., 1., 1.));
 
       // YOU NEED TO COMPUTE V AND W TO CREATE THE RAY FOR THIS PIXEL,
       // USING vPosition.x AND vPosition.y.
@@ -194,37 +222,12 @@
       // YOU NEED TO SET r,g,b FOR material.
 	  materialSphere[0] = vec3(1., 1., 0.);
 	  materialSphere[1] = vec3(0., 1., 1.);
+	  uInterSphereMatreal = vec3(1., 1., 1.);
 
-      vec3 color = vec3(0., 0., 0.);
-	  float t = 10000.;
-	  for(int i = 0; i < sphereNum; i++){
-	      float tt = raySphere(V, W, uSphere[i]);
-		  if(tt < t){
-			  t = tt;
-	          color = shadeSphere(W, V + t * W, uSphere[i], materialSphere[i]);
-		  }
+	  vec3 color = vec3(0., 0., 0.);
+      if(rayTracing(V, W)){
+   	      color = shade(W, rtPoint, rtNormal, rtMaterial);
 	  }
-
-	  vec3 material = vec3(1., .2, .8);
-
-	  vec2 t0 = vec2(-10000., 10000.);
-	  vec3 cc = color.xyz;
-	  int cnt = 0;
-
-	  for(int i = 0; i < interSphereNum; i++){
-	  	  vec2 t1 = raySphere2(V, W, uInterSphere[i]);
-	  	  if(max(t0.x, t1.x) < min(t0.y, t1.y)){
-	  		  if(t1.x > t0.x){
-	 		  	  cc = shadeSphere(W, V + t1.x * W, uInterSphere[i], material);
-	  		  }
-			  t0.x = max(t0.x, t1.x);
-			  t0.y = min(t0.y, t1.y);
-			  cnt++;
-		  }
-	  }
-
-	  if(cnt == interSphereNum && t0.x < t)
-	  	  color = cc.xyz;
 
       gl_FragColor = vec4(sqrt(color), 1.); // Do Gamma correction.
    }
