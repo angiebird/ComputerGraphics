@@ -135,7 +135,7 @@ function gl_update(gl) {
   	 ry = gl.cursor.y;
    
    uSphere = [middle.x, middle.y - 53., middle.z - 5., 50];
-   uTranSphere = [1.7*Math.sin(tt/1.7) + middle.x, middle.y, 1.7*Math.cos(tt/1.7) + middle.z, .5];
+   uTranSphere = [2.3*Math.sin(tt/1.7) + middle.x, middle.y, 2.3*Math.cos(tt/1.7) + middle.z, 1.];
    gl.uniform4fv(gl.uTranSphere, uTranSphere);
    gl.uniform4fv(gl.uSphere, uSphere);
    gl.uniform1f(gl.uF, f);

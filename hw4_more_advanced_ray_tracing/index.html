@@ -27,7 +27,7 @@
 <script src=lib1.js></script>
 
 <div class="container">
-    <h2>Rotate Me</h2>
+    <h2>Moonwalk</h2>
     <div>
 <canvas id='canvas1' width=600 height=600></canvas>
 </div>
@@ -50,7 +50,7 @@
 
    #define tranSphereNum (1)
    uniform vec4 uTranSphere[tranSphereNum];
-   float refracRate = 1.5;
+   float refracRate = 1.3;
    vec3 outPoint;
    vec3 outDir;
    float outT;
@@ -113,6 +113,26 @@ float noise(vec3 P) {
                       dot(g6, vec3(f0.x, f1.y, f1.z)), dot(g7, vec3(f1.x, f1.y, f1.z))), f.z);
    return 2.2 * mix(mix(nz.x,nz.z,f.y), mix(nz.y,nz.w,f.y), f.x);
 }
+
+//turbulence(p) = ∑i ( abs(noise(2i p)) / 2i )
+
+	float turbulence(vec3 p){
+		float value = 0.;
+		float idx = 0.;
+		for(int i = 0; i < 10; i++){
+			value += abs(noise(pow(2., idx) * p)) / pow(2., idx);
+	    }
+		return value;
+	}
+	float fractal(vec3 p){
+		float value = 0.;
+		float idx = 0.;
+		for(int i = 0; i < 10; i++){
+			value += noise(pow(2., idx) * p) / pow(2., idx);
+	    }
+		return value;
+	}
+
 
    // Compute intersection of a ray with a sphere, if any.  Return t.
    // If there is no intersection, return 10000.
@@ -261,8 +281,11 @@ float noise(vec3 P) {
 	  }
 	  if(cnt == interSphereNum && t0.x > 0.001 && t0.x < t){
 			t = t0.x;
-			rtMaterial = material;
 			rtPoint    = point;
+			rtMaterial = material;
+			rtMaterial.x  += .2*turbulence(2.*point);
+			rtMaterial.y  += .1*pow(turbulence(.5*point), 2.);
+			rtMaterial.z  += .1*pow(turbulence(3.*point), 3.);
 			rtNormal   = normal;
 			result = true;
 	  }
@@ -335,12 +358,12 @@ float noise(vec3 P) {
 	  V = vec3(0., 0., uF);
 	  W = normalize(vPosition - V);
 
-	  materialPlane[0] = vec3(0., 0., 1.);
+	  materialPlane[0] = vec3(.01, .01, .01);
 	  plane[0] = vec4(0., 0., 1., 50.);
 
 
       // YOU NEED TO SET r,g,b FOR material.
-	  materialSphere[0] = vec3(1., 1., 0.);
+	  materialSphere[0] = vec3(1., 1., .0);
 	  //materialSphere[1] = vec3(0., 1., 1.);
 	  uInterSphereMatreal = vec3(1., 0., 1.);
 
