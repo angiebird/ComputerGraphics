@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/pygment_trac.css" media="screen">
+
+    <title>ComputerGraphics by angiebird</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>ComputerGraphics</h1>
+        <h2></h2>
+
+        <section id="downloads">
+          <a href="https://github.com/angiebird/ComputerGraphics/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/angiebird/ComputerGraphics/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/angiebird/ComputerGraphics" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+<script src=lib_matrices.js></script>
+
+<div class="container">
+    <h2>Animation</h2>
+    <div>
+    <canvas id='canvas0' width=400 height=400></canvas>
+    </div>
+</div>
+<script>
+    var time = (new Date()).getTime() / 1000;
+    var canvas = initCanvas('canvas0');
+    var rect = canvas.getBoundingClientRect();
+    var s = rect.height/2;
+
+    canvas.update = function(g){
+        var x = this.cursor.x, y = this.cursor.y;
+
+        // use coordinate x = [-1, 1] and y = [-1, 1]
+        var T = new Matrix();
+        T.scale(.5 , .5 , .5 );
+        T.rotateX(Math.PI/4);
+        T.rotateY(Math.PI/4);
+        T.rotateY(time);
+        T.translate(0, 0, -10);
+        T.perspectZ(-2);
+
+        // transform to canvas coordinate
+        T.scale(s, -s, s);
+        T.translate(s, s, 0);
+
+        
+        var c = Speaker();
+        c.transform(T);
+
+        c.draw(g, 'rgb(256, 256, 128)');
+
+        // draw the outer box
+        g.strokeStyle = 'blue';
+        g.beginPath();
+        g.moveTo(0,0);
+        g.lineTo(this.width,0);
+        g.lineTo(this.width,this.height);
+        g.lineTo(0,this.height);
+        g.lineTo(0,0);
+        g.stroke();
+    }
+</script>
+
+<div class="container">
+    <h2>Speaker</h2>
+    <div>
+    <canvas id='canvas1' width=400 height=400></canvas>
+    </div>
+</div>
+<script>
+    var time = (new Date()).getTime() / 1000;
+    var canvas = initCanvas('canvas1');
+    var rect = canvas.getBoundingClientRect();
+    var s = rect.height/2;
+
+    canvas.update = function(g){
+        var x = this.cursor.x, y = this.cursor.y;
+
+        // use coordinate x = [-1, 1] and y = [-1, 1]
+        var T = new Matrix();
+        T.scale(.5 , .5 , .5 );
+        T.rotateX(Math.PI/4);
+        T.rotateY(Math.PI/4);
+        T.rotateY(time);
+        T.translate(0, 0, -10);
+        T.perspectZ(-2);
+
+        // transform to canvas coordinate
+        T.scale(s, -s, s);
+        T.translate(s, s, 0);
+
+        
+        var c = Speaker();
+        c.transform(T);
+
+        c.draw(g, 'rgb(256, 256, 128)');
+
+        // draw the outer box
+        g.strokeStyle = 'blue';
+        g.beginPath();
+        g.moveTo(0,0);
+        g.lineTo(this.width,0);
+        g.lineTo(this.width,this.height);
+        g.lineTo(0,this.height);
+        g.lineTo(0,0);
+        g.stroke();
+    }
+</script>
+
+
+<div class="container">
+    <h2>Ball</h2>
+    <div>
+    <canvas id='canvas2' width=400 height=400></canvas>
+    </div>
+</div>
+<script>
+    var time = (new Date()).getTime() / 1000;
+    var canvas = initCanvas('canvas2');
+    var rect = canvas.getBoundingClientRect();
+    var s = rect.height/2;
+
+    canvas.update = function(g){
+        var x = this.cursor.x, y = this.cursor.y;
+
+        // use coordinate x = [-1, 1] and y = [-1, 1]
+        var T = new Matrix();
+        //T.rotateX(Math.PI/4);
+        //T.rotateY(Math.PI/4);
+        T.scale(1.2 , 1.2 , 1.2 );
+        T.translate(0, 0, -10);
+        T.perspectZ(-2);
+
+        // transform to canvas coordinate
+        T.scale(s, -s, s);
+        T.translate(x, y, 0);
+
+        
+        var c = Ball();
+        c.transform(T);
+
+        c.draw(g, 'rgb(256, 256, 128)');
+
+        // draw the outer box
+        g.strokeStyle = 'blue';
+        g.beginPath();
+        g.moveTo(0,0);
+        g.lineTo(this.width,0);
+        g.lineTo(this.width,this.height);
+        g.lineTo(0,this.height);
+        g.lineTo(0,0);
+        g.stroke();
+    }
+</script>
+
+<div class="container">
+    <h2>Cylinder</h2>
+    <div>
+    <canvas id='canvas3' width=400 height=400></canvas>
+    </div>
+</div>
+<script>
+    var time = (new Date()).getTime() / 1000;
+    var canvas = initCanvas('canvas3');
+    var rect = canvas.getBoundingClientRect();
+    var s = rect.height/2;
+
+    canvas.update = function(g){
+        var x = this.cursor.x, y = this.cursor.y;
+
+        // use coordinate x = [-1, 1] and y = [-1, 1]
+        var T = new Matrix();
+        //T.rotateX(Math.PI/4);
+        //T.rotateY(Math.PI/4);
+        T.scale(1.2 , 1.2 , 1.2 );
+        T.translate(0, 0, -10);
+        T.perspectZ(-2);
+
+        // transform to canvas coordinate
+        T.scale(s, -s, s);
+        T.translate(x, y, 0);
+
+        
+        var c = Cylinder();
+        c.transform(T);
+
+        c.draw(g, 'rgb(256, 256, 128)');
+
+        // draw the outer box
+        g.strokeStyle = 'blue';
+        g.beginPath();
+        g.moveTo(0,0);
+        g.lineTo(this.width,0);
+        g.lineTo(this.width,this.height);
+        g.lineTo(0,this.height);
+        g.lineTo(0,0);
+        g.stroke();
+    }
+</script>
+
+<div class="container">
+    <h2>Perspective</h2>
+    <div>
+    <canvas id='canvas4' width=400 height=400></canvas>
+    </div>
+</div>
+<script>
+    var time = (new Date()).getTime() / 1000;
+    var canvas = initCanvas('canvas4');
+    var rect = canvas.getBoundingClientRect();
+    var s = rect.height/2;
+
+    canvas.update = function(g){
+        var x = this.cursor.x, y = this.cursor.y;
+
+        // use coordinate x = [-1, 1] and y = [-1, 1]
+        var T = new Matrix();
+        T.rotateX(Math.PI/4);
+        T.rotateY(Math.PI/4);
+        T.scale(1.2 , 1.2 , 1.2 );
+        T.translate(0, 0, -10);
+        T.perspectZ(-2);
+
+        // transform to canvas coordinate
+        T.scale(s, -s, s);
+        T.translate(x, y, 0);
+
+        
+        var c = new MagicCube();
+        c.rotate(0, 2, 0);
+        c.transform(T);
+
+        c.draw(g, 'rgb(256, 256, 128)');
+
+        // draw the outer box
+        g.strokeStyle = 'blue';
+        g.beginPath();
+        g.moveTo(0,0);
+        g.lineTo(this.width,0);
+        g.lineTo(this.width,this.height);
+        g.lineTo(0,this.height);
+        g.lineTo(0,0);
+        g.stroke();
+    }
+</script>
+
+
+
