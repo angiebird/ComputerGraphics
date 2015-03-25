@@ -1,8 +1,8 @@
 function Vector4(x, y, z, w) {
-    this.x = 0;
-    this.y = 0;
-    this.z = 0;
-    this.w = 1;
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.w = w;
     this.set(x, y, z, w);
 }
 Vector4.prototype = {
@@ -28,6 +28,18 @@ Matrix.prototype = {
                 temp.arr[i][j] = 0;
                 for(var k = 0; k < this.arr.length; k++){
                     temp.arr[i][j] += m.arr[i][k] * this.arr[k][j];
+                }
+            }
+        }
+        this.arr = temp.arr;
+    },
+    multiplyR : function(m){
+        var temp = new Matrix();
+        for(var i = 0; i < this.arr.length; i++){
+            for(var j = 0; j < this.arr.length; j++){
+                temp.arr[i][j] = 0;
+                for(var k = 0; k < this.arr.length; k++){
+                    temp.arr[i][j] += this.arr[i][k] * m.arr[k][j];
                 }
             }
         }
@@ -93,6 +105,8 @@ function Obj(){
     this.transVLs = [];
     this.eLs = [];
     this.sLs = [];
+    this.subObjLs = [];
+    this.trans = new Matrix();
 }
 Obj.prototype = {
     addVertex : function(x, y, z){
@@ -102,9 +116,18 @@ Obj.prototype = {
     addEdge : function(i, j){
         this.eLs.push([i, j]);
     },
+    addSubObj : function(subObj){
+        this.subObjLs.push(subObj);
+    },
     transform : function(m){
+        var CT = new Matrix();
+        CT.multiply(m);
+        CT.multiplyR(this.trans);
         for(var i = 0; i < this.vLs.length; i++){
-            m.transform(this.vLs[i], this.transVLs[i]);
+            CT.transform(this.vLs[i], this.transVLs[i]);
+        }
+        for(var i = 0; i < this.subObjLs.length; i++){
+            this.subObjLs[i].transform(CT)
         }
     },
     draw : function(g, color){
@@ -117,6 +140,9 @@ Obj.prototype = {
             g.lineTo(v.x/v.w, v.y/v.w);
             g.stroke();
         }
+        for(var i = 0; i < this.subObjLs.length; i++){
+            this.subObjLs[i].draw(g, color);
+        }
     },
     sync : function(){
         for(var i = 0; i < this.vLs.length; i++){
@@ -126,6 +152,14 @@ Obj.prototype = {
             this.vLs[i].w = this.transVLs[i].w;
         }
     }
+}
+
+function Line(v0, v1){
+    var obj = new Obj();
+    obj.addVertex(v0.x, v0.y, v0.z);
+    obj.addVertex(v1.x, v1.y, v1.z);
+    obj.addEdge(0, 1);
+    return obj;
 }
 
 function Speaker(){

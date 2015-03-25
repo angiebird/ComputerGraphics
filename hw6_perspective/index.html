@@ -27,7 +27,7 @@
 <script src=lib_matrices.js></script>
 
 <div class="container">
-    <h2>Animation</h2>
+    <h2>Animation - Soccer</h2>
     <div>
     <canvas id='canvas0' width=400 height=400></canvas>
     </div>
@@ -43,10 +43,10 @@
 
         // use coordinate x = [-1, 1] and y = [-1, 1]
         var T = new Matrix();
-        T.scale(.5 , .5 , .5 );
-        T.rotateX(Math.PI/4);
+        T.scale(2 , 2 , 2 );
+        //T.rotateX(Math.PI/4);
         T.rotateY(Math.PI/4);
-        T.rotateY(time);
+        //T.rotateY(time);
         T.translate(0, 0, -10);
         T.perspectZ(-2);
 
@@ -54,11 +54,73 @@
         T.scale(s, -s, s);
         T.translate(s, s, 0);
 
-        
-        var c = Speaker();
-        c.transform(T);
+        // left body
+        var assL= new Vector4  (.5, 0, 0, 1);
+        var kneeL = new Vector4(.5, -1, 0, 1);
+        var heelL = new Vector4(.5, -2, 0, 1);
+        var toeL= new Vector4  (.5, -2, .2, 1);
 
-        c.draw(g, 'rgb(256, 256, 128)');
+        var thighL = Line(assL, kneeL);
+        thighL.trans.rotateX(Math.PI/10 * (-Math.sin(2*time) - 1));
+
+        var shankL = Line(kneeL, heelL);
+        shankL.trans.translate(-kneeL.x, -kneeL.y, -kneeL.z);
+        shankL.trans.rotateX(Math.PI/10 * (-Math.sin(2*time) + 1));
+        shankL.trans.translate(kneeL.x, kneeL.y, kneeL.z);
+        //shankL.transform(T);
+
+        var footL = Line(heelL, toeL);
+        footL.trans.translate(-heelL.x, -heelL.y, -heelL.z);
+        footL.trans.rotateX(-Math.PI/10 * (-Math.sin(2*time)));
+        footL.trans.translate(heelL.x, heelL.y, heelL.z);
+        //footL.transform(T);
+
+        // thighL -> shankL -> footL
+        thighL.addSubObj(shankL);
+        shankL.addSubObj(footL);
+
+        thighL.transform(T);
+        
+        // right body
+        var assR= new Vector4(0, 0, 0, 1);
+        var kneeR = new Vector4(0, -1, 0, 1);
+        var heelR = new Vector4(0, -2, 0, 1);
+        var toeR= new Vector4(0, -2, .2, 1);
+
+        var thighR = Line(assR, kneeR);
+        thighR.trans.rotateX(Math.PI/10 * (Math.sin(2*time) - 1));
+
+        var shankR = Line(kneeR, heelR);
+        shankR.trans.translate(-kneeR.x, -kneeR.y, -kneeR.z);
+        shankR.trans.rotateX(Math.PI/10 * (Math.sin(2*time) + 1));
+        shankR.trans.translate(kneeR.x, kneeR.y, kneeR.z);
+        //shankR.transform(T);
+
+        var footR = Line(heelR, toeR);
+        footR.trans.translate(-heelR.x, -heelR.y, -heelR.z);
+        footR.trans.rotateX(-Math.PI/10 * (Math.sin(2*time)));
+        footR.trans.translate(heelR.x, heelR.y, heelR.z);
+        //footR.transform(T);
+
+        // thighR -> shankR -> footR
+        thighR.addSubObj(shankR);
+        shankR.addSubObj(footR);
+
+        thighR.transform(T);
+
+
+        // transform to canvas coordinate
+        var ball = Ball();
+        ball.trans.scale(.2, .2, .2);
+        ball.trans.translate(0, 2*-Math.cos(Math.PI/5) + .2 , 2*Math.sin(Math.PI/5) + .1)
+        ball.trans.translate(.25*(Math.sin(2*time) + 1), Math.abs(Math.cos(2*time)), 0)
+        ball.transform(T);
+
+
+
+        thighR.draw(g, 'rgb(256, 256, 128)');
+        thighL.draw(g, 'rgb(256, 256, 128)');
+        ball.draw(g, 'rgb(256, 256, 128)');
 
         // draw the outer box
         g.strokeStyle = 'blue';
