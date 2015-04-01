@@ -180,12 +180,19 @@ function Editor(canvasId, SplineObj){
         }
         drawDotLs(g, this.showDot, this.dotLs, dotR, SplineObj);
 
-        //var i = 0;
-        //while(i+3 < this.dotLs.length){
-        //    var spline = SplineObj(this.dotLs[i+0], this.dotLs[i+1], this.dotLs[i+2], this.dotLs[i+3]);
-        //    spline.draw(g, 'rgb(256, 256, 128)');
-        //    i += 4;
-        //}
+        var w = this.width;
+        var h = this.height;
+
+        g.strokeStyle = 'green';
+        g.beginPath();
+        g.moveTo(0,h/2);
+        g.lineTo(w,h/2);
+        g.stroke();
+
+        g.beginPath();
+        g.moveTo(w/2,0);
+        g.lineTo(w/2,h);
+        g.stroke();
 
         // draw the outer box
         g.strokeStyle = 'blue';
