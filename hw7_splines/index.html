@@ -30,18 +30,28 @@
 
 
 <div class="container">
-    <h2>Buttle Maker</h2>
+    <h2>Editor</h2>
     <h6>left click: add dot</h6>
     <h6>left click on dot and move: move dot</h6>
     <h6>middle click: show aid dots</h6>
     <h6>right click: new line</h6>
     <h6>double click on dot: align the position or rate</h6>
     <div>
-    <canvas id='canvas1' width=800 height=800></canvas>
+    <canvas id='canvas1' width=600 height=600></canvas>
     </div>
 </div>
 <script>
-    Editor('canvas1', Bezier)
+    Editor('canvas1', Bezier, false)
+</script>
+<div class="container">
+    <h2>Buttle Maker</h2>
+    <h6> Draw something on the right-half plane</h6>
+    <div>
+    <canvas id='canvas2' width=600 height=600></canvas>
+    </div>
+</div>
+<script>
+    Editor('canvas2', Bezier, true)
 </script>
 
 

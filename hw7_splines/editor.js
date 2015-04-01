@@ -103,7 +103,7 @@ function clone(obj) {
     }
     return temp;
 }
-function Editor(canvasId, SplineObj){
+function Editor(canvasId, SplineObj, hasButtle){
     this.canvas = initCanvas(canvasId);
     var rect = this.canvas.getBoundingClientRect();
     var s = rect.height/2;
@@ -113,6 +113,7 @@ function Editor(canvasId, SplineObj){
     var dotR = 5;
     this.canvas.currDot = false;
     this.canvas.showDot= true;
+    this.canvas.buttle= new Obj();
 
 
     this.show = function(){
@@ -182,12 +183,16 @@ function Editor(canvasId, SplineObj){
                     this.dotLs.push(mousePos);
                 }
                 this.splineDotLs = dotLsToSpline(this.dotLs, SplineObj);
+                if(hasButtle)
+                    this.buttle = dotLsToButtle(this.dotLs, this.splineDotLs, s);
             }
         }
     }, false);
 
     this.canvas.addEventListener('mouseup', function(evt) {
         this.splineDotLs = dotLsToSpline(this.dotLs, SplineObj);
+        if(hasButtle)
+            this.buttle = dotLsToButtle(this.dotLs, this.splineDotLs, s);
         this.currDot = false;
     }, false);
 
@@ -240,6 +245,9 @@ function Editor(canvasId, SplineObj){
                     }
                 }
             }
+            this.splineDotLs = dotLsToSpline(this.dotLs, SplineObj);
+            if(hasButtle)
+                this.buttle = dotLsToButtle(this.dotLs, this.splineDotLs, s);
         }
     }, false);
 
@@ -247,28 +255,35 @@ function Editor(canvasId, SplineObj){
     this.canvas.update = function(g){
         var x = this.cursor.x, y = this.cursor.y;
 
+        if(this.currDot){
+            this.splineDotLs = dotLsToSpline(this.dotLs, SplineObj);
+            if(hasButtle)
+                this.buttle = dotLsToButtle(this.dotLs, this.splineDotLs, s);
+        }
+
         for(var li = 0; li < this.lineLs.length; li++){
             drawDotLs(g, this.showDot, this.lineLs[li], dotR, SplineObj, this.splineDotLs);
         }
         drawDotLs(g, this.showDot, this.dotLs, dotR, SplineObj, this.splineDotLs);
 
-        var buttle = dotLsToButtle(this.dotLs, this.splineDotLs, s);
-        var T = new Matrix();
-        T.scale(.5,.5,.5);
-        T.translate(s/2, 0, 0);
-        buttle.transform(T);
-        buttle.draw(g, "pink");
+        if(hasButtle){
+            var time = (new Date()).getTime() / 1000;
+            var T = new Matrix();
+            T.scale(.5,.5,.5);
+            T.translate(s/2, 0, 0);
+            this.buttle.transform(T);
+            this.buttle.draw(g, "pink");
 
-        var time = (new Date()).getTime() / 1000;
-        T = new Matrix();
-        T.scale(.5,.5,.5);
-        T.translate(0, -s/2, 0);
-        T.rotateX(Math.PI/4);
-        T.rotateY(time);
-        T.translate(0, s/2, 0);
-        T.translate(s/2, s, 0);
-        buttle.transform(T);
-        buttle.draw(g, "pink");
+            T = new Matrix();
+            T.scale(.5,.5,.5);
+            T.translate(0, -s/2, 0);
+            T.rotateX(Math.PI/4);
+            T.rotateY(time);
+            T.translate(0, s/2, 0);
+            T.translate(s/2, s, 0);
+            this.buttle.transform(T);
+            this.buttle.draw(g, "pink");
+        }
 
 
         var w = this.width;
