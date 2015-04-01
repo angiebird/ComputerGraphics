@@ -1,4 +1,18 @@
+function moveDot(dot, rat, P){
+    rat.x = P.x + rat.x-dot.x; 
+    rat.y = P.y + rat.y-dot.y; 
+    dot.x = P.x;
+    dot.y = P.y;
+}
 function drawDotLs(g, showDot, dotLs, dotR, SplineObj){
+    var i = 0;
+    while(i+3 < dotLs.length){
+        var spline = SplineObj(dotLs[i+0], dotLs[i+1], dotLs[i+2], dotLs[i+3]);
+        g.lineWidth=5;
+        spline.draw(g, 'rgb(256, 256, 128)');
+        g.lineWidth=1;
+        i += 4;
+    }
     if(showDot){
         for(var di = 0; di < dotLs.length; di++){
             g.beginPath();
@@ -21,15 +35,47 @@ function drawDotLs(g, showDot, dotLs, dotR, SplineObj){
             }
         }
     }
+}
 
+function dotLsToButtle(dotLs, SplineObj, xm){
+    var obj = new Obj();
+    var vLs = []
     var i = 0;
     while(i+3 < dotLs.length){
         var spline = SplineObj(dotLs[i+0], dotLs[i+1], dotLs[i+2], dotLs[i+3]);
-        g.lineWidth=5;
-        spline.draw(g, 'rgb(256, 256, 128)');
-        g.lineWidth=1;
+        vLs = vLs.concat(spline.vLs);
         i += 4;
     }
+
+    var n = vLs.length;
+    var m = 50;
+    for(var i = 0; i < n; i++){
+        var y = vLs[i].y;
+        var r = vLs[i].x - xm;
+        for(var j = 0; j < m; j++){
+            var v = 1/m*j;
+            var theta = 2 * Math.PI * v;
+
+            var x = r * Math.sin(theta);
+            var z = r * Math.cos(theta);
+
+            obj.addVertex(x, y, z);
+
+
+            var curr = i * m + j;
+
+            // down
+            if(i+1 < n){
+                var down = (i+1) * m + j;
+                obj.addEdge(curr, down);
+            }
+
+            // right
+            var right= i * m + (j+1)%m
+            obj.addEdge(curr, right);
+        }
+    }
+    return obj;
 }
 
 function clone(obj) {
@@ -73,7 +119,7 @@ function Editor(canvasId, SplineObj){
         console.log(evt.button);
         if(evt.button === 2){
             //console.log("hello right");
-            this.lineLs.push(this.dotLs);
+            //this.lineLs.push(this.dotLs);
             this.dotLs = [];
             //console.log(this.lineLs[0]);
         }
@@ -132,7 +178,18 @@ function Editor(canvasId, SplineObj){
 
     this.canvas.addEventListener('mousemove', function(evt) {
         if(this.currDot !== false){
+            if(this.currDot % 4 == 2 && this.currDot + 2 < this.dotLs.length){
+                //this.dotLs[this.currDot+2] = this.getMousePos(evt);
+                moveDot(this.dotLs[this.currDot+2], this.dotLs[this.currDot+3], this.getMousePos(evt))
+                moveDot(this.dotLs[this.currDot], this.dotLs[this.currDot+1], this.getMousePos(evt))
+            }
+            else if(this.currDot % 4 == 0 && this.currDot - 2 >= 0){
+                moveDot(this.dotLs[this.currDot-2], this.dotLs[this.currDot-1], this.getMousePos(evt))
+                moveDot(this.dotLs[this.currDot], this.dotLs[this.currDot+1], this.getMousePos(evt))
+            }
+            else{
             this.dotLs[this.currDot] = this.getMousePos(evt);
+            }
         }
     }, false);
 
@@ -179,6 +236,25 @@ function Editor(canvasId, SplineObj){
             drawDotLs(g, this.showDot, this.lineLs[li], dotR, SplineObj);
         }
         drawDotLs(g, this.showDot, this.dotLs, dotR, SplineObj);
+
+        var buttle = dotLsToButtle(this.dotLs, SplineObj, s);
+        var T = new Matrix();
+        T.scale(.5,.5,.5);
+        T.translate(s/2, 0, 0);
+        buttle.transform(T);
+        buttle.draw(g, "pink");
+
+        var time = (new Date()).getTime() / 1000;
+        T = new Matrix();
+        T.scale(.5,.5,.5);
+        T.translate(0, -s/2, 0);
+        T.rotateX(Math.PI/4);
+        T.rotateY(time);
+        T.translate(0, s/2, 0);
+        T.translate(s/2, s, 0);
+        buttle.transform(T);
+        buttle.draw(g, "pink");
+
 
         var w = this.width;
         var h = this.height;

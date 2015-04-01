@@ -187,8 +187,8 @@ function Bezier(a, b, d, c){
 
     var yt;
     var xt;
-    for(var i = 0; i <= 100; i++){
-        var t = i * 0.01;
+    for(var i = 0; i <= 25; i++){
+        var t = i * 0.04;
         xt = 0;
         xt += vx.x * Math.pow(t, 3);
         xt += vx.y * Math.pow(t, 2);
@@ -234,8 +234,8 @@ function Hermite(a,b,d,c){
 
     var obj = new Obj();
 
-    for(var i = 0; i <= 100; i++){
-        var t = i * 0.01;
+    for(var i = 0; i <= 25; i++){
+        var t = i * 0.04;
 
         var xt = 0;
         xt += vx.x * Math.pow(t, 3);
