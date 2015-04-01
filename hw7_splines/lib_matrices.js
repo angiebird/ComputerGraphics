@@ -171,7 +171,7 @@ function Line(v0, v1){
     return obj;
 }
 
-function Bezier(a, b, c, d){
+function Bezier(a, b, d, c){
     var m = new Matrix()
     ux = new Vector4(a.x, b.x, c.x, d.x);
     uy = new Vector4(a.y, b.y, c.y, d.y);
@@ -209,7 +209,7 @@ function Bezier(a, b, c, d){
     return obj;
 }
 
-function Hermite(a,b,c,d){
+function Hermite(a,b,d,c){
 
     var x0 = a.x;
     var y0 = a.y;

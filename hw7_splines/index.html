@@ -31,23 +31,18 @@
 
 <div class="container">
     <h2>Bezier splines</h2>
-    <button class="btn" onclick="BE.canvas.show()">show dot</button>
+    <h6>left click: add dot</h6>
+    <h6>left click on dot and move: move dot</h6>
+    <h6>middle click: show aid dots</h6>
+    <h6>right click: new line</h6>
+    <h6>double click on dot: align the position or rate</h6>
     <div>
-    <canvas id='canvas1' width=400 height=400></canvas>
+    <canvas id='canvas1' width=800 height=800></canvas>
     </div>
 </div>
 <script>
     var BE = Editor('canvas1', Bezier)
 </script>
 
-<div class="container">
-    <h2>Hermite splines</h2>
-    <div>
-    <canvas id='canvas0' width=400 height=400></canvas>
-    </div>
-</div>
-<script>
-    Editor('canvas0', Hermite)
-</script>
 
 
