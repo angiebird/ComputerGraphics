@@ -4,12 +4,30 @@ function moveDot(dot, rat, P){
     dot.x = P.x;
     dot.y = P.y;
 }
-function drawDotLs(g, showDot, dotLs, dotR, SplineObj){
+function dotLsToSpline(dotLs, SplineObj){
+    var vLs = [];
     var i = 0;
     while(i+3 < dotLs.length){
         var spline = SplineObj(dotLs[i+0], dotLs[i+1], dotLs[i+2], dotLs[i+3]);
+        vLs = vLs.concat(spline.vLs);
+        i += 4;
+    }
+    return vLs
+}
+function drawDotLs(g, showDot, dotLs, dotR, SplineObj, splineDotLs){
+    var i = 0;
+    while(i+3 < dotLs.length){
+        //var spline = SplineObj(dotLs[i+0], dotLs[i+1], dotLs[i+2], dotLs[i+3]);
         g.lineWidth=5;
-        spline.draw(g, 'rgb(256, 256, 128)');
+        //spline.draw(g, 'rgb(256, 256, 128)');
+        g.beginPath();
+        g.strokeStyle = 'yellow';
+        g.beginPath();
+        g.moveTo(splineDotLs[0].x, splineDotLs[0].y);
+        for(var i = 0; i < splineDotLs.length; i++){
+            g.lineTo(splineDotLs[i].x, splineDotLs[i].y);
+        }
+        g.stroke();
         g.lineWidth=1;
         i += 4;
     }
@@ -37,15 +55,9 @@ function drawDotLs(g, showDot, dotLs, dotR, SplineObj){
     }
 }
 
-function dotLsToButtle(dotLs, SplineObj, xm){
+function dotLsToButtle(dotLs, splineDotLs, xm){
     var obj = new Obj();
-    var vLs = []
-    var i = 0;
-    while(i+3 < dotLs.length){
-        var spline = SplineObj(dotLs[i+0], dotLs[i+1], dotLs[i+2], dotLs[i+3]);
-        vLs = vLs.concat(spline.vLs);
-        i += 4;
-    }
+    var vLs = splineDotLs;
 
     var n = vLs.length;
     var m = 50;
@@ -97,6 +109,7 @@ function Editor(canvasId, SplineObj){
     var s = rect.height/2;
     this.canvas.lineLs = [];
     this.canvas.dotLs = [];
+    this.canvas.splineDotLs = [];
     var dotR = 5;
     this.canvas.currDot = false;
     this.canvas.showDot= true;
@@ -168,11 +181,13 @@ function Editor(canvasId, SplineObj){
                 else{
                     this.dotLs.push(mousePos);
                 }
+                this.splineDotLs = dotLsToSpline(this.dotLs, SplineObj);
             }
         }
     }, false);
 
     this.canvas.addEventListener('mouseup', function(evt) {
+        this.splineDotLs = dotLsToSpline(this.dotLs, SplineObj);
         this.currDot = false;
     }, false);
 
@@ -233,11 +248,11 @@ function Editor(canvasId, SplineObj){
         var x = this.cursor.x, y = this.cursor.y;
 
         for(var li = 0; li < this.lineLs.length; li++){
-            drawDotLs(g, this.showDot, this.lineLs[li], dotR, SplineObj);
+            drawDotLs(g, this.showDot, this.lineLs[li], dotR, SplineObj, this.splineDotLs);
         }
-        drawDotLs(g, this.showDot, this.dotLs, dotR, SplineObj);
+        drawDotLs(g, this.showDot, this.dotLs, dotR, SplineObj, this.splineDotLs);
 
-        var buttle = dotLsToButtle(this.dotLs, SplineObj, s);
+        var buttle = dotLsToButtle(this.dotLs, this.splineDotLs, s);
         var T = new Matrix();
         T.scale(.5,.5,.5);
         T.translate(s/2, 0, 0);
