@@ -7,8 +7,8 @@ function Editor(canvasId, SplineObj){
     this.canvas.currDot = false;
     this.canvas.showDot= true;
 
-    this.show = function(){
-        this.canvas.showDot = false;
+    this.showDot = function(){
+        this.canvas.showDot = !this.canvas.showDot;
     }
 
     this.canvas.getMousePos = function(evt) {
