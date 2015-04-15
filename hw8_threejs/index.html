@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/pygment_trac.css" media="screen">
+
+    <title>ComputerGraphics by angiebird</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>ComputerGraphics</h1>
+        <h2></h2>
+
+        <section id="downloads">
+          <a href="https://github.com/angiebird/ComputerGraphics/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/angiebird/ComputerGraphics/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/angiebird/ComputerGraphics" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+<script src=three.js></script>
+<script>
+   window.time = 0;
+   window.SimpleScene = function() {
+      this.init = function(name) {
+         this.scene = new THREE.Scene();
+
+         // CREATE THE CAMERA, AND ATTACH IT TO THE SCENE.
+
+         var camera = new THREE.PerspectiveCamera(50, 1, 1, 10000);
+         camera.position.z = 5;
+         this.scene.add(camera);
+
+         // CREATE THE WEBGL RENDERER, AND ATTACH IT TO THE DOCUMENT BODY.
+
+         var renderer = new THREE.WebGLRenderer( { alpha: true } );
+         renderer.setSize(400, 400);
+         document.getElementById(name).appendChild(renderer.domElement);
+
+         // CALL THE USER'S SETUP FUNCTION JUST ONCE.
+
+         this.setup();
+
+         // START THE ANIMATION LOOP.
+
+         var that = this;
+         (function tick() {
+            time = (new Date().getTime()) / 1000;
+            that.update();
+            renderer.render(that.scene, camera);
+            requestAnimationFrame(tick);
+         })();
+      }
+    };
+</script>
+
+<div id='Scene1_id' class='container'></div>
+<script>
+function Scene1() {
+   var light;
+   var joint;
+   var ball;
+   var cylinder;
+   var fanLs = [];
+   var fanNum = 6;
+   var fanJoint;
+   var ballLs = [];
+   var ballNum = 6;
+
+   this.setup = function() {
+      light = new THREE.DirectionalLight(0xffffff);
+      light.position.set(1,1,1).normalize();
+      this.scene.add(light);
+      var ballGeometry = new THREE.SphereGeometry(.5, .5, .5);
+      var cylinderGeometry = new THREE.CylinderGeometry( .1, .1, .3, 32 );
+
+      //var material = new THREE.MeshPhongMaterial({
+      //   ambient  : 0,
+      //   emissive : 0x000080,
+      //   color    : 0x000080,
+      //   specular : 0x101010,
+      //   shininess: 40
+      //});
+      var material = new THREE.MeshBasicMaterial( { 
+        envMap: THREE.ImageUtils.loadTexture( 'metal.jpg', THREE.SphericalReflectionMapping ),
+        overdraw: 0.5 
+      });
+
+      joint = new THREE.Mesh();
+      fanJoint = new THREE.Mesh();
+
+      ball = new THREE.Mesh(ballGeometry, material);
+      cylinder = new THREE.Mesh( cylinderGeometry, material );
+
+      for(var i = 0; i < fanNum; i++){
+        var fan = new THREE.Mesh(new THREE.BoxGeometry(.05, 3.5, .05), material);
+        fan.rotation.x = Math.PI/2;
+        fan.rotation.z = i*Math.PI*2/fanNum;
+        fanLs.push(fan);
+        fanJoint.add(fan);
+      }
+
+      for(var i = 0; i < ballNum; i++){
+        var sb= new THREE.Mesh(new THREE.SphereGeometry(.3, .3, .3), material);
+        joint.add(sb);
+        ballLs.push(sb);
+      }
+
+      this.scene.add(joint);
+      joint.add(fanJoint);
+      joint.add(ball);
+      joint.add(cylinder);
+   }
+
+   this.update = function() {
+       cylinder.position.y = .5
+       fanJoint.position.y = .6
+       fanJoint.rotation.y += 0.1
+      for(var i = 0; i < ballNum; i++){
+        ballLs[i].position.set(i*.3 +.5,.2*(Math.sin(time+0.2*Math.PI*i) - Math.sin(time)), 0);
+      }
+       if(joint.position.x < -5){
+       joint.position.x = 5;
+       }
+       else{
+       joint.position.x -= .01;
+       joint.position.y = Math.sin(time);
+       }
+   }
+}
+Scene1.prototype = new SimpleScene;
+new Scene1().init('Scene1_id');
+</script>
+</body>
+</html>
+
+
