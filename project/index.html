@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/pygment_trac.css" media="screen">
+
+    <title>ComputerGraphics by angiebird</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>ComputerGraphics</h1>
+        <h2></h2>
+
+        <section id="downloads">
+          <a href="https://github.com/angiebird/ComputerGraphics/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/angiebird/ComputerGraphics/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/angiebird/ComputerGraphics" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+<script src=./js/three.js></script>
+<script src=./js/FlyControls.js></script>
+<script src=./js/DecalGeometry.js></script>
+<script>
+   window.time = 0;
+   window.SimpleScene = function() {
+      this.init = function(name) {
+         this.scene = new THREE.Scene();
+
+         // CREATE THE CAMERA, AND ATTACH IT TO THE SCENE.
+
+         var camera = new THREE.PerspectiveCamera(50, 1, 1, 10000);
+         camera.position.z = 5;
+         this.scene.add(camera);
+
+         // CREATE THE WEBGL RENDERER, AND ATTACH IT TO THE DOCUMENT BODY.
+
+         var renderer = new THREE.WebGLRenderer( { alpha: true } );
+         renderer.setSize(400, 400);
+         document.getElementById(name).appendChild(renderer.domElement);
+          this.container = renderer.domElement;
+
+         // CALL THE USER'S SETUP FUNCTION JUST ONCE.
+
+         this.setup();
+
+         // START THE ANIMATION LOOP.
+
+         var that = this;
+         (function tick() {
+            time = (new Date().getTime()) / 1000;
+            that.update();
+            renderer.render(that.scene, camera);
+            requestAnimationFrame(tick);
+         })();
+      }
+    };
+</script>
+
+
+<div id='Scene' class='container'><h1> Paintball Game </h1></div>
+<script>
+function PaintballScene() {
+   var light;
+   this.bulletList = [];
+   this.objList = [];
+    this.decalDiffuse = THREE.ImageUtils.loadTexture( 'textures/decal/decal-diffuse.png' );
+	this.decalNormal = THREE.ImageUtils.loadTexture( 'textures/decal/decal-normal.jpg' );
+    this.bulletSize = 0.2;
+
+	var decalMaterial = new THREE.MeshPhongMaterial( {
+		specular: 0x444444,
+		map: this.decalDiffuse,
+		normalMap: this.decalNormal,
+		normalScale: new THREE.Vector2( 1, 1 ),
+		shininess: 30,
+		transparent: true,
+		depthTest: true,
+		depthWrite: false,
+		polygonOffset: true,
+		polygonOffsetFactor: -4,
+		wireframe: false
+	});
+    var material = new THREE.MeshPhongMaterial({
+       ambient  : 0,
+       emissive : 0x808080,
+       color    : 0x808080,
+       specular : 0x101010,
+       shininess: 40
+    });
+
+   this.setup = function() {
+
+      light = new THREE.DirectionalLight(0xffffff);
+      light.position.set(1,1,1).normalize();
+      this.scene.add(light);
+
+      var bulletList = this.bulletList;
+      var scene = this.scene;
+
+      var gun= new THREE.Mesh();
+      this.gun= gun;
+
+      var cylinder= new THREE.Mesh( new THREE.CylinderGeometry( .1, .1, 1., 32 ), material );
+      cylinder.rotation.x = Math.PI/2;
+      cylinder.position.z = -0.5;
+
+      var ball = new THREE.Mesh( new THREE.SphereGeometry(5, .5, 32), material );
+      ball.position.z = -10.;
+      scene.add(ball);
+      var obj = {mesh: ball};
+      this.objList.push(obj);
+
+      this.controls = new THREE.FlyControls(gun);
+      var controls = this.controls;
+      controls.movementSpeed = 1000;
+      controls.domElement = this.container;
+      controls.rollSpeed = Math.PI / 24;
+      controls.autoForward = false;
+      controls.dragToLook = false;
+      controls.shoot = function(){
+          // get bullet direction
+          var dir = new THREE.Vector3();
+          dir.setFromMatrixPosition( cylinder.matrixWorld ).normalize();
+
+          // add a bullet into scene
+          var bulletMaterial = decalMaterial.clone();
+          bulletMaterial.color.setHex( Math.random() * 0xffffff );
+
+          var bullet = {dir: dir, mesh: new THREE.Mesh( new THREE.SphereGeometry(.1, .1, .1), bulletMaterial )}
+          bulletList.push(bullet);
+          scene.add(bullet.mesh);
+      }
+
+      gun.add(cylinder)
+      this.scene.add(gun);
+      this.scene.add(ball);
+   }
+
+   this.checkIntersection = function(bullet, obj) {
+       raycaster = new THREE.Raycaster();
+       raycaster.far = .5;
+
+       raycaster.set( bullet.mesh.position, bullet.dir);
+
+       var intersects = raycaster.intersectObjects( [obj.mesh] );
+
+       if ( intersects.length > 0) {
+           var p = intersects[ 0 ].point.clone();
+           var n = intersects[ 0 ].face.normal.clone();
+           return {p: p, n: n, obj:obj};
+       }
+       return false;
+
+   }
+
+   this.update = function() {
+
+       this.controls.update(0.1);
+       
+       discardBulletLs = [];
+       // update bullet movement
+       for(var i = 0; i < this.bulletList.length; i++){
+           var bullet = this.bulletList[i];
+           bullet.mesh.position.x += bullet.dir.x * .2;
+           bullet.mesh.position.y += bullet.dir.y * .2;
+           bullet.mesh.position.z += bullet.dir.z * .2;
+           //if(bullet.mesh.position.x > 100 || bullet.mesh.position.y > 100 || bullet.mesh.position.z > 100){
+           //    discardBulletLs.push(true);
+           //}
+           //else{
+           //    discardBulletLs.push(false);
+           //}
+       }
+
+       //update object movement
+       for(var i = 0; i < this.objList.length; i++){
+           // do something
+       }
+
+       // check collision
+       for(var j = 0; j < this.bulletList.length; j++){
+         for(var i = 0; i < this.objList.length; i++){
+            var bullet = this.bulletList[j];
+            var obj = this.objList[i];
+            var intersection = this.checkIntersection(bullet, obj);
+            if(intersection){
+                var check = new THREE.Vector3( 1, 1, 1 );
+                var size = 2*Math.random();
+                var s = new THREE.Vector3( size, size, size );
+                var m = new THREE.Mesh( new THREE.DecalGeometry( intersection.obj.mesh, intersection.p, intersection.n, s, check ), bullet.mesh.material);
+                this.scene.add( m );
+                //discardBulletLs[j] = true;
+            }
+         }
+       }
+
+       //var bulletList = []
+       //// discard hitted or go-away bullet 
+       //for(var i = 0; i < discardBulletLs.length; i++){
+       //    if(discardBulletLs[i] == false){
+       //        bulletList.push(this.bulletList[i]);
+       //    }
+       //}
+       //this.bulletList = bulletList;
+   }
+}
+PaintballScene.prototype = new SimpleScene;
+new PaintballScene().init('Scene');
+</script>
+</body>
+</html>
+
+
