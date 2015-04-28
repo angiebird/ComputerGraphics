@@ -193,8 +193,7 @@ function PaintballScene() {
             var intersection = this.checkIntersection(bullet, obj);
             if(intersection){
                 var check = new THREE.Vector3( 1, 1, 1 );
-                var size = 2*Math.random();
-                var s = new THREE.Vector3( size, size, size );
+                var s = new THREE.Vector3( 2*Math.random(), 2*Math.random(), 2*Math.random() );
                 var m = new THREE.Mesh( new THREE.DecalGeometry( intersection.obj.mesh, intersection.p, intersection.n, s, check ), bullet.mesh.material);
                 this.scene.add( m );
                 //discardBulletLs[j] = true;
