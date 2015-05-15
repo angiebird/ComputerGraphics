@@ -12,61 +12,97 @@
 
   <body>
 
-    <header>
-      <div class="container">
-        <h1>ComputerGraphics</h1>
-        <h2></h2>
-
-        <section id="downloads">
-          <a href="https://github.com/angiebird/ComputerGraphics/zipball/master" class="btn">Download as .zip</a>
-          <a href="https://github.com/angiebird/ComputerGraphics/tarball/master" class="btn">Download as .tar.gz</a>
-          <a href="https://github.com/angiebird/ComputerGraphics" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
-        </section>
-      </div>
-    </header>
 
 <script src=./js/three.js></script>
 <script src=./js/FlyControls.js></script>
 <script src=./js/DecalGeometry.js></script>
+<script src=./js/Terrain.js></script>
+<script src=./js/ImprovedNoise.js></script>
+<script src=./js/Player.js></script>
+<script src=./js/Queue.js></script>
+<script src=./js/threex.text.js></script>
+<script src="http://mrdoob.github.com/three.js/examples/fonts/helvetiker_regular.typeface.js"></script>
+
+<div id="container"><br /><br /><br /><br /><br />Generating...</div>
 <script>
    window.time = 0;
    window.SimpleScene = function() {
       this.init = function(name) {
          this.scene = new THREE.Scene();
 
+         container = document.getElementById( 'container' );
+
          // CREATE THE CAMERA, AND ATTACH IT TO THE SCENE.
 
-         var camera = new THREE.PerspectiveCamera(50, 1, 1, 10000);
-         camera.position.z = 5;
-         this.scene.add(camera);
+         var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 10000);
+
+         //camera.position.z = -5;
+         this.camera = camera;
+         //this.scene.add(this.camera);
 
          // CREATE THE WEBGL RENDERER, AND ATTACH IT TO THE DOCUMENT BODY.
 
          var renderer = new THREE.WebGLRenderer( { alpha: true } );
-         renderer.setSize(400, 400);
-         document.getElementById(name).appendChild(renderer.domElement);
-          this.container = renderer.domElement;
+
+         renderer.setSize( window.innerWidth, window.innerHeight );
+
+         container.innerHTML = "";
+
+		 container.appendChild( renderer.domElement );
+
+         this.container = renderer.domElement;
 
          // CALL THE USER'S SETUP FUNCTION JUST ONCE.
 
          this.setup();
+
+         var onWindowResize = function() {
+
+         	windowHalfX = window.innerWidth / 2;
+         	windowHalfY = window.innerHeight / 2;
+
+         	camera.aspect = window.innerWidth / window.innerHeight;
+         	camera.updateProjectionMatrix();
+
+         	renderer.setSize( window.innerWidth, window.innerHeight );
+
+         }
+
+         window.addEventListener( 'resize', onWindowResize, false );
+         var start_time = (new Date().getTime()) / 1000;
+
+
 
          // START THE ANIMATION LOOP.
 
          var that = this;
          (function tick() {
             time = (new Date().getTime()) / 1000;
+            that.time = time - start_time;
             that.update();
-            renderer.render(that.scene, camera);
+            renderer.render(that.scene, that.camera);
             requestAnimationFrame(tick);
          })();
       }
     };
 </script>
 
-
-<div id='Scene' class='container'><h1> Paintball Game </h1></div>
 <script>
+function genMaterial(){
+    var material = new THREE.MeshPhongMaterial({
+       ambient  : 0,
+       emissive : 0x008080,
+       color    : 0x008080,
+       specular : 0x001010,
+       shininess: 10,
+       side: THREE.DoubleSide
+    });
+    color = Math.random() * 0xffffff
+    material.color.setHex( color );
+    material.emissive.setHex( color );
+    return material;
+}
+
 function PaintballScene() {
    var light;
    this.bulletList = [];
@@ -74,6 +110,7 @@ function PaintballScene() {
     this.decalDiffuse = THREE.ImageUtils.loadTexture( 'textures/decal/decal-diffuse.png' );
 	this.decalNormal = THREE.ImageUtils.loadTexture( 'textures/decal/decal-normal.jpg' );
     this.bulletSize = 0.2;
+
 
 	var decalMaterial = new THREE.MeshPhongMaterial( {
 		specular: 0x444444,
@@ -90,9 +127,9 @@ function PaintballScene() {
 	});
     var material = new THREE.MeshPhongMaterial({
        ambient  : 0,
-       emissive : 0x808080,
-       color    : 0x808080,
-       specular : 0x101010,
+       emissive : 0x008080,
+       color    : 0x008080,
+       specular : 0x001010,
        shininess: 40
     });
 
@@ -102,46 +139,139 @@ function PaintballScene() {
       light.position.set(1,1,1).normalize();
       this.scene.add(light);
 
-      var bulletList = this.bulletList;
-      var scene = this.scene;
 
-      var gun= new THREE.Mesh();
-      this.gun= gun;
+      //Queue for Paint effect
+      this.paintQueue = new Queue();
+      
+      // Terrain
+      //this.terrain = new Terrain();
+      //this.terrain.mesh.position.y -= 256
+      //this.scene.add(this.terrain.mesh)
 
-      var cylinder= new THREE.Mesh( new THREE.CylinderGeometry( .1, .1, 1., 32 ), material );
-      cylinder.rotation.x = Math.PI/2;
-      cylinder.position.z = -0.5;
+      // floor
+      floorLv = -1.05;
+      var geometry = new THREE.PlaneGeometry( 50, 50, 32 );
+      var floorMaterial = new THREE.MeshBasicMaterial( {color: 0x404000, side: THREE.DoubleSide} );
+      var floor = new THREE.Mesh( geometry, floorMaterial );
+      floor.rotation.x = Math.PI/2;
+      floor.position.y = floorLv;
+      this.scene.add( floor);
 
-      var ball = new THREE.Mesh( new THREE.SphereGeometry(5, .5, 32), material );
-      ball.position.z = -10.;
-      scene.add(ball);
-      var obj = {mesh: ball};
-      this.objList.push(obj);
+      // wall
+      var geometry = new THREE.PlaneGeometry( 50, 10, 32 );
+      var wallMaterial = new THREE.MeshBasicMaterial( {color: 0x808080, side: THREE.DoubleSide} );
 
-      this.controls = new THREE.FlyControls(gun);
-      var controls = this.controls;
-      controls.movementSpeed = 1000;
-      controls.domElement = this.container;
-      controls.rollSpeed = Math.PI / 24;
-      controls.autoForward = false;
-      controls.dragToLook = false;
-      controls.shoot = function(){
-          // get bullet direction
-          var dir = new THREE.Vector3();
-          dir.setFromMatrixPosition( cylinder.matrixWorld ).normalize();
+      //front
+      var frontWall = new THREE.Mesh( geometry, wallMaterial);
+      frontWall.position.z = -25;
+      this.scene.add( frontWall);
+      this.objList.push({mesh: frontWall});
 
-          // add a bullet into scene
-          var bulletMaterial = decalMaterial.clone();
-          bulletMaterial.color.setHex( Math.random() * 0xffffff );
 
-          var bullet = {dir: dir, mesh: new THREE.Mesh( new THREE.SphereGeometry(.1, .1, .1), bulletMaterial )}
-          bulletList.push(bullet);
-          scene.add(bullet.mesh);
+      //left
+      var leftWall = new THREE.Mesh( geometry, wallMaterial);
+      leftWall.rotation.y = Math.PI/2;
+      leftWall.position.x = -25;
+      this.scene.add( leftWall);
+      this.objList.push({mesh: leftWall});
+
+      //right
+      var rightWall = new THREE.Mesh( geometry, wallMaterial);
+      rightWall.rotation.y = Math.PI/2;
+      rightWall.position.x = 25;
+      this.scene.add( rightWall);
+      this.objList.push({mesh: rightWall});
+
+      //back
+      var backWall = new THREE.Mesh( geometry, wallMaterial);
+      backWall.position.z = 25;
+      this.scene.add( backWall);
+      this.objList.push({mesh: backWall});
+
+
+      //Shelter
+      for(var i = 0; i < 20; i++){
+          var size = Math.random() + 0.5;
+          var geometry = new THREE.SphereGeometry(size, .5, 32);
+          var material = genMaterial();
+          var mesh = new THREE.Mesh(geometry, material);
+          mesh.position.x = (Math.random()-0.5)*30;
+          mesh.position.z = (Math.random()-0.5)*30;
+          mesh.position.y = floorLv + size;
+          this.objList.push({mesh: mesh});
+          this.scene.add(mesh)
       }
 
-      gun.add(cylinder)
-      this.scene.add(gun);
-      this.scene.add(ball);
+      // Character and Cam
+	  this.camera.position.z += 2.5;
+	  this.camera.position.y += 1.2;
+      this.camera.rotation.x -= Math.PI/20;
+
+      this.playerLs = [];
+
+      //Player
+      player = new Player();
+      this.player = player
+      this.scene.add(player.gun);
+      this.objList.push({mesh:this.player.head});
+      this.playerLs.push({mesh:player.head, player: player});
+
+      this.player.gun.add(this.camera);
+
+      //Enemy 
+
+      this.enemyLs = [];
+
+      for(i = 0; i < 16; i++){
+        enemy= new Player();
+        enemy.gun.rotation.y = Math.PI*2*Math.random();
+        if(i / 8 > 1){
+            enemy.gun.position.x = 23;
+        }
+        else{
+            enemy.gun.position.x = -23;
+        }
+        if(i%2 == 0 ){
+            enemy.gun.position.z = 23;
+        }
+        else{
+            enemy.gun.position.z = -23;
+        }
+        this.enemyLs.push(enemy);
+        this.scene.add(enemy.gun);
+        this.objList.push({mesh:enemy.head});
+        this.playerLs.push({mesh:enemy.head, player: enemy});
+      }
+
+      // Moving and shooting control
+      var that = this
+      this.controls = new THREE.FlyControls(player);
+      var controls = this.controls;
+      controls.movementSpeed = 0.2;
+      controls.domElement = this.container;
+      controls.rollSpeed = Math.PI / 96;
+      controls.autoForward = false;
+      controls.dragToLook = false;
+
+      this.shoot = function(player){
+          // get bullet position and direction
+          var material = genMaterial();
+
+          var pos = new THREE.Mesh( new THREE.SphereGeometry(.1, .1, .1), material );
+          var dir = new THREE.Vector3();
+
+          pos.position.setFromMatrixPosition(player.gun.matrixWorld);
+          dir = player.getDir();
+
+
+
+          var bullet = {dir: dir, mesh: pos}
+
+          that.bulletList.push(bullet);
+          that.scene.add(bullet.mesh);
+      }
+      controls.shoot = this.shoot;
+
    }
 
    this.checkIntersection = function(bullet, obj) {
@@ -161,10 +291,63 @@ function PaintballScene() {
 
    }
 
+   this.checkIntersection2 = function(bullet, obj) {
+       raycaster = new THREE.Raycaster();
+       raycaster.set( bullet.mesh.position, bullet.dir);
+
+       var intersects = raycaster.intersectObjects( [obj.mesh] );
+
+       if ( intersects.length > 0) {
+           var p = intersects[ 0 ].point.clone();
+           var n = intersects[ 0 ].face.normal.clone();
+           return {p: p, n: n, obj:obj};
+       }
+       return false;
+
+   }
+   this.checkColide = function(player){
+       var collide = false;
+       var dir = player.getDir();
+       for(var i = 0; i < this.objList.length; i++){
+          var obj = this.objList[i];
+          if(this.checkIntersection({mesh: player.gun, dir: dir}, obj)){
+              collide = true;
+              break;
+          }
+       }
+       return collide;
+   }
+
    this.update = function() {
 
-       this.controls.update(0.1);
+       if(this.checkColide(this.player)){
+           this.controls.update(1, true);
+       }
+       else{
+           this.controls.update(1, false);
+       }
        
+       //update enemy movement
+       for(var i = 0; i < this.enemyLs.length; i++){
+           var enemy = this.enemyLs[i];
+           if(enemy.isDepth == false){
+              if(this.checkColide(this.enemyLs[i]) == false){
+                  if(Math.random() < 0.02){
+                       enemy.gun.rotation.y -= Math.PI/24*(Math.random());
+                       this.shoot(enemy)
+                  }
+                  else{
+                       var dir = this.enemyLs[i].getDir();
+                       enemy.gun.position.x += 0.02*dir.x;
+                       enemy.gun.position.z += 0.02*dir.z;
+                  }
+              }
+              else{
+                   enemy.gun.rotation.y -= Math.PI*(Math.random()-0.5);
+              }
+           }
+       }
+
        discardBulletLs = [];
        // update bullet movement
        for(var i = 0; i < this.bulletList.length; i++){
@@ -172,16 +355,18 @@ function PaintballScene() {
            bullet.mesh.position.x += bullet.dir.x * .2;
            bullet.mesh.position.y += bullet.dir.y * .2;
            bullet.mesh.position.z += bullet.dir.z * .2;
-           //if(bullet.mesh.position.x > 100 || bullet.mesh.position.y > 100 || bullet.mesh.position.z > 100){
-           //    discardBulletLs.push(true);
-           //}
-           //else{
-           //    discardBulletLs.push(false);
-           //}
+           if(bullet.mesh.position.x > 1000 || bullet.mesh.position.y > 1000 || bullet.mesh.position.z > 1000){
+               discardBulletLs.push(true);
+           }
+           else{
+               discardBulletLs.push(false);
+           }
        }
 
        //update object movement
        for(var i = 0; i < this.objList.length; i++){
+           var obj = this.objList[i];
+           //obj.mesh.position.x = Math.sin(this.time) + i
            // do something
        }
 
@@ -193,22 +378,58 @@ function PaintballScene() {
             var intersection = this.checkIntersection(bullet, obj);
             if(intersection){
                 var check = new THREE.Vector3( 1, 1, 1 );
-                var s = new THREE.Vector3( 2*Math.random(), 2*Math.random(), 2*Math.random() );
-                var m = new THREE.Mesh( new THREE.DecalGeometry( intersection.obj.mesh, intersection.p, intersection.n, s, check ), bullet.mesh.material);
+                var size = 0.2+ Math.random() * ( 0.4- 0.2);
+                var s = new THREE.Vector3( size, size, size );
+                //var s = new THREE.Vector3( .2, .2, .2 );
+                var bulletMaterial = decalMaterial.clone();
+                bulletMaterial.color = bullet.mesh.material.color;
+                var m = new THREE.Mesh( new THREE.DecalGeometry( intersection.obj.mesh, intersection.p, intersection.n, s, check ), bulletMaterial);
+
+                //m.position.x -= this.objList[i].mesh.position.x ;
+                //m.position.y -= this.objList[i].mesh.position.y ;
+                //m.position.z -= this.objList[i].mesh.position.z ;
+
+                //this.objList[i].mesh.add( m );
+                this.paintQueue.enqueue(m);
                 this.scene.add( m );
-                //discardBulletLs[j] = true;
+                discardBulletLs[j] = true;
             }
          }
        }
 
-       //var bulletList = []
-       //// discard hitted or go-away bullet 
-       //for(var i = 0; i < discardBulletLs.length; i++){
-       //    if(discardBulletLs[i] == false){
-       //        bulletList.push(this.bulletList[i]);
-       //    }
-       //}
-       //this.bulletList = bulletList;
+       // check collision
+       for(var j = 0; j < this.bulletList.length; j++){
+         for(var i = 0; i < this.playerLs.length; i++){
+            var bullet = this.bulletList[j];
+            var obj = this.playerLs[i];
+            var intersection = this.checkIntersection(bullet, obj);
+            if(intersection){
+                if(this.time > 10){
+                obj.player.depth();
+                }
+            }
+         }
+       }
+
+
+       //rmove old paint effect
+       for(i = 100; i < this.paintQueue.getLength(); i++){
+           var item = this.paintQueue.dequeue();
+           this.scene.remove(item);
+       }
+
+       // bug here, the shoot() function can not access new bulletList
+       var bulletList = []
+       // discard hitted or go-away bullet 
+       for(var i = 0; i < discardBulletLs.length; i++){
+           if(discardBulletLs[i] == true){
+               this.scene.remove(this.bulletList[i].mesh)
+           }
+           else{
+               bulletList.push(this.bulletList[i])
+           }
+       }
+       this.bulletList = bulletList;
    }
 }
 PaintballScene.prototype = new SimpleScene;
